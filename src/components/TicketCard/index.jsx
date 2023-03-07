@@ -44,7 +44,7 @@ const TicketCard = ({ data, handleClick }) => {
 	}
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col w-fit gap-4">
 			<div className="flex w-[20rem] h-[25rem] bg-black rounded-xl overflow-hidden relative">
 				<img className='w-full h-full ' src={data.imageUrl} alt="" />
 				<div className="absolute flex flex-col items-center justify-center w-full h-full bg-black/80">
@@ -52,17 +52,17 @@ const TicketCard = ({ data, handleClick }) => {
 					<p className='text-xl font-bold text-white'>₦{data.amount}</p>
 				</div>
 			</div>
-			<div className="flex items-center justify-center w-full gap-6 h-fit">
-				<button className="flex items-center justify-center px-4 py-1 text-2xl font-bold text-white bg-green-400" onClick={decreaseNumberOfTicket}>-</button>
-				<input type="text" value={numberOfTicket} onChange={setTicketNumber} />
-				<button className="flex items-center justify-center px-4 py-1 text-2xl font-bold text-white bg-green-400" onClick={increaseNumberOfTicket} >+</button>
+			<div className="flex items-center justify-between w-full gap-6 h-fit">
+				<button className="flex items-center justify-center px-4 py-1 text-2xl font-bold text-white bg-green-500" onClick={decreaseNumberOfTicket}>-</button>
+				<input type="text" className='flex justify-center items-center w-24 border py-2 text-center text-xl h-full font-bold' value={numberOfTicket} onChange={setTicketNumber} />
+				<button className="flex items-center justify-center px-4 py-1 text-2xl font-bold text-white bg-green-500" onClick={increaseNumberOfTicket} >+</button>
 			</div>
 			<div className="flex items-center justify-center gap-3 text-lg font-bold">
 				<span>₦{numberOfTicket * data.amount}</span>
 				{ error && <div className="flex items-center justify-center text-sm font-medium text-red-400">{error}</div> }
 			</div>
 			{/* <InterswitchPay {...paymentParameters}/> */}
-			<button className='flex items-center justify-center w-full px-4 py-2 text-lg font-bold text-white bg-[#07360e]' onClick={() => { handleInsideClick() }}>Buy Now</button>
+			<button className='flex items-center justify-center w-full px-4 py-2 text-lg font-bold text-white bg-green-500' onClick={() => { handleInsideClick() }}>Buy Now</button>
 		</div>
 	)
 }
