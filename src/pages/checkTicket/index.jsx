@@ -14,7 +14,7 @@ const CheckTicket = () => {
 	const [input, setInput] = useState(null);
 
 	const { isLoading, error, data: eventData } = useQuery({
-		queryKey: ['ticketData'],
+		queryKey: ['eventData'],
 		queryFn: () => getData(fetchTicketDetails, id),
 	})
 
@@ -22,17 +22,19 @@ const CheckTicket = () => {
 		setInput(e.target.value);
 	}
 
+	const { isLoading: loading, error: err, data: ticketData, refetch } = useQuery({
+		queryKey: ['ticketData'],
+		queryFn: () => getData(checkTicket, { ticketId: input, eventId: id }),
+		refetchOnWindowFocus: false,
+		enabled: false // disable this query from automatically running
+	})
+
 	const handleSubmit = () => {
 		console.log("input: ", input);
-		const { isLoading, error, data } = useQuery({
-			queryKey: ['ticketData'],
-			queryFn: () => getData(checkTicket, { ticketId: input, eventId: id }),
-		})
-		
-		console.log("ticket: ", data);
+		refetch();
 	}
-	console.log("data: ", eventData);
-
+	
+	console.log("ticketdata: ", ticketData, err, loading);
 	return (
 		<div className='h-full'>
 			<Header />
@@ -47,8 +49,15 @@ const CheckTicket = () => {
 								Submit
 							</button>
 						</div>
+						{err && <span>Error: {err?.response?.data?.error || err?.message}</span>}
 					</div>
 				</div>
+
+				{
+					ticketData && (
+						<div className="">my data</div>
+					)
+				}
 			</div>
 			<Footer data={eventData?.event} />
 		</div>

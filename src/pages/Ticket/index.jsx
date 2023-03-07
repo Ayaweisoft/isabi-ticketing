@@ -8,8 +8,10 @@ import { fetchTicketDetails, verifyPayment, submitTicket } from '../../adapters/
 import { useState, useContext } from 'react'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
+import SuccessModal from '../../components/SuccessModal'
 import { TicketContext } from '../../contexts/TicketContext'
 import appConfig from '../../configs/app.config'
+import generateTicketId from '../../utils/generateTicketId'
 
 const index = () => {
 	const { id } = useParams();
@@ -18,7 +20,8 @@ const index = () => {
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
 	const [successModal, setSuccessModal] = useState(false);
-	const [ticketId, setTicketId] = useState(null);
+	const [ticketId, setTicketId] = useState("");
+	const [enableVerifyPayment, setEnableVerifyPayment] = useState(false);
 	const { ticket } = useContext(TicketContext)
 
 	const [formData, setFormData] = useState({
@@ -33,74 +36,69 @@ const index = () => {
 		queryFn: () => getData(fetchTicketDetails, id),
 	})
 
+
+
 	const handleClick = (id) => {
 		console.log('clicked: ', id);
 
 		setModal(true);
 	}
 
-	const submitVoteToDB = (tx_ref, trans_id,) => {
+	const submitVoteToDB = async (tx_ref, trans_id,) => {
+		var tId = await generateTicketId(6, id);
+		setTicketId(tId.toString());
+
+		console.log("tid: ", tId);
+		
 		console.log("submitting vote to db");
-		const buyer = JSON.parse(localStorage.getItem("buyer"));
-		const ticket = JSON.parse(localStorage.getItem("ticket"));
 		let requestData = {
 			message: "Payment successful",
 			ref: tx_ref,
 			trax: trans_id,
 			eventId: eventData.event._id,
-			ticketId: trxRef,
+			ticketId: ticketId,
 			ticketDatabaseId: ticket._id,
-			parentTicket: trxRef,
+			parentTicket: ticketId,
 			amount: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
 			ticketType: ticket.ticketType,
 			imageUrl: ticket.imageUrl,
 			name: formData.name,
-			phone: formData.phone_number,
+			phone: formData.phone,
 			email: formData.email,
 			numberOfTicket: ticket.numberOfTicket,
 			amountPaid: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
 		};
 
-		const { isLoading, error, data } = useQuery({
-			queryKey: ['submitTicket'],
-			queryFn: () => getData(submitTicket, requestData),
-		})
+		const result = await submitTicket(requestData);
+		console.log("result: ", result);
 
-		if (data?.statusText === "OK") {
+		if (result?.statusText === "OK") {
+			setModal(false);
 			setSuccessModal(true);
-			ticketId = data?.data?.ticketId;
+			// setTicketId(result.data?.data?.ticketId);
 		}
 	}
 
-	const paymentCallback = (merchantCode, txnRef, amount) => {
-		const { isLoading, error, data } = useQuery({
-			queryKey: ['verifyPayment'],
-			queryFn: () => getData(verifyPayment, {
-				merchantCode,
-				txnRef,
-				amount
-			}),
-		})
+	const paymentCallback = async (merchantCode, txnRef, amount) => {
+		const verifyData = await verifyPayment({
+			merchantcode: merchantCode,
+			reference: txnRef,
+			amount
+		});
 
-		if (error) {
-			console.log('error: ', error);
+		console.log("verifyData: ", verifyData);
+
+		if (!verifyData) {
+			console.log('error: ', err);
 			return;
 		}
 
 		let successCodes = ["10", "11", "00"];
-		console.log("data: ", data);
 
-		if (successCodes.includes(data.ResponseCode)) {
-			submitVoteToDB(data.PaymentReference, data.MerchantReference);
+		if (successCodes.includes(verifyData.data.ResponseCode)) {
+			submitVoteToDB(verifyData.data.PaymentReference, verifyData.data.MerchantReference);
 		} else {
 			console.log("interswitch faliure");
-
-			// if (res)
-			// 	this.paymentCallback(
-			// 		"MX46047",
-			// 		this.tId,
-			// 		parseFloat(this.ticketDetails.cost).toString()
-			// 	);
 		}
 
 	}
@@ -130,12 +128,15 @@ const index = () => {
 		currency: 566, // ISO 4217 numeric code of the currency used
 		onComplete: handlePaymentResponse,
 		site_redirect_url: `${appConfig.devAppUrl}tickets/${id}`,
-		mode: "TEST",
+		mode: "LIVE",
 	}
 
-	const initiatePayment = () => {
+	const initiatePayment = async () => {
+		
 		window.webpayCheckout(paymentParameters);
 	}
+
+	console.log("tid: ", typeof ticketId)
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
@@ -166,7 +167,7 @@ const index = () => {
 				modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />
 			}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
-				<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{ eventData.event.eventName }</h2>
+				<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData.event.eventName}</h2>
 				<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
 
 				<div className="flex justify-center items-center flex-wrap gap-6">
@@ -176,6 +177,8 @@ const index = () => {
 						))
 					}
 				</div>
+
+				{ successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}		
 				{/* The button to open modal */}
 				{/* <label htmlFor="my-modal-4" className="btn">open modal</label> */}
 
