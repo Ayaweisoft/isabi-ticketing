@@ -37,9 +37,9 @@ const index = ({ setModal, handleSubmit, setFormData, formData }) => {
 	// }
 
 	return (
-		<div className="fixed z-10 flex items-center justify-center w-full h-full">
+		<div className="fixed z-10 flex items-center justify-center w-full px-6 h-full">
 			<div className="absolute cursor-pointer flex w-full h-full z-10 bg-black/70" onClick={() => { setModal(false) }}></div>
-			<div className="z-20 flex flex-col items-center justify-center w-2/5 p-4 bg-white shadow-lg">
+			<div className="z-20 flex flex-col items-center justify-center lg:w-2/5 p-4 bg-white shadow-lg">
 				<form action="" className='flex flex-col items-center justify-center w-full gap-4' onSubmit={handleSubmit}>
 					<h2 className="text-2xl font-bold">Checkout</h2>
 					<div className="w-full max-w-xs form-control">

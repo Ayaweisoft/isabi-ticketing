@@ -4,9 +4,9 @@ const successModal = ({ setSuccessModal, ticketId }) => {
 
 
 	return (
-		<div className="fixed z-10 flex items-center justify-center w-full h-full">
+		<div className="fixed z-10 flex items-center justify-center px-6 w-full h-full">
 			<div className="absolute cursor-pointer flex w-full h-full z-10 bg-black/70" onClick={() => { setSuccessModal(false) }}></div>
-			<div className="z-20 flex flex-col items-center justify-center w-2/5 p-4 bg-white rounded-lg font-medium shadow-lg">
+			<div className="z-20 flex flex-col items-center justify-center lg:w-2/5 p-4 bg-white rounded-lg font-medium shadow-lg">
 				Congratulations!!! 🌟🌟🌟 on your successful purchase of ticket with
 				ID
 				<span className="text-xl text-[#] font-semibold">{ ticketId }</span>

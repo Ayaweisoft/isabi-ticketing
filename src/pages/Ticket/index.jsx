@@ -19,7 +19,7 @@ const index = () => {
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
-	const [successModal, setSuccessModal] = useState(false);
+	const [successModal, setSuccessModal] = useState(true);
 	const [ticketId, setTicketId] = useState("");
 	const [enableVerifyPayment, setEnableVerifyPayment] = useState(false);
 	const { ticket } = useContext(TicketContext)
@@ -49,14 +49,14 @@ const index = () => {
 		setTicketId(tId.toString());
 
 		console.log("tid: ", tId);
-		
+
 		console.log("submitting vote to db");
 		let requestData = {
 			message: "Payment successful",
 			ref: tx_ref,
 			trax: trans_id,
 			eventId: eventData.event._id,
-			ticketId: ticketId,
+			ticketId: tId,
 			ticketDatabaseId: ticket._id,
 			parentTicket: ticketId,
 			amount: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
@@ -166,6 +166,7 @@ const index = () => {
 			{
 				modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />
 			}
+			{ successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
 				<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData.event.eventName}</h2>
 				<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
@@ -178,7 +179,7 @@ const index = () => {
 					}
 				</div>
 
-				{ successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}		
+						
 				{/* The button to open modal */}
 				{/* <label htmlFor="my-modal-4" className="btn">open modal</label> */}
 
