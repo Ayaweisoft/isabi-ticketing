@@ -6,10 +6,13 @@ import getData from '../../utils/getData'
 import { fetchTicketDetails, checkTicket } from '../../adapters/CommonAdapter'
 import Footer from '../../components/Footer'
 import Header from '../../components/Header'
+import TicketData from '../../components/TicketData'
 
 const CheckTicket = () => {
 	const { id } = useParams();
 	console.log(id)
+
+	const [enableFetch, setEnableFetch] = useState(false);
 
 	const [input, setInput] = useState(null);
 
@@ -23,15 +26,15 @@ const CheckTicket = () => {
 	}
 
 	const { isLoading: loading, error: err, data: ticketData, refetch } = useQuery({
-		queryKey: ['ticketData'],
+		queryKey: ['checkTicketData'],
 		queryFn: () => getData(checkTicket, { ticketId: input, eventId: id }),
 		refetchOnWindowFocus: false,
-		enabled: false // disable this query from automatically running
+		enabled: enableFetch // disable this query from automatically running
 	})
 
 	const handleSubmit = () => {
 		console.log("input: ", input);
-		refetch();
+		setEnableFetch(true);
 	}
 	
 	console.log("ticketdata: ", ticketData, err, loading);
@@ -55,7 +58,7 @@ const CheckTicket = () => {
 
 				{
 					ticketData && (
-						<div className="">my data</div>
+						<TicketData data={ticketData} />
 					)
 				}
 			</div>
