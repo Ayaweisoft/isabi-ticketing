@@ -16,7 +16,7 @@ function App() {
       <main className="App">
         <ScrollToTop>
           <Routes>
-            {/* <Route exact path="/" element={<Ticket />} /> */}
+            <Route exact path="/" element={<Ticket />} />
             <Route exact path="/:id" element={<Ticket />} />
             <Route exact path="/check-ticket/:id" element={<CheckTicket />} />
           </Routes>
