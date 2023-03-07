@@ -132,7 +132,7 @@ const index = () => {
 	}
 
 	const initiatePayment = async () => {
-		
+
 		window.webpayCheckout(paymentParameters);
 	}
 
@@ -152,47 +152,34 @@ const index = () => {
 
 	console.log("data: ", eventData);
 
-	if (error) {
-		return <div>Something went wrong</div>
-	}
-
-	if (isLoading) {
-		return <div>Loading...</div>
-	}
-
 	return (
 		<div className=''>
 			<Header />
 			{
 				modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />
 			}
-			{ successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
+			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
-				<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData.event.eventName}</h2>
-				<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
+				{isLoading && <div className="flex justify-center items-center h-screen">Loading...</div>}
+				{error && <div className="flex justify-center items-center h-screen">Error: {error.message}</div>}
+				{
+					!isLoading && !error && eventData && (
+						<>
+							<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
+							<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
 
-				<div className="flex justify-center items-center flex-wrap gap-6">
-					{
-						eventData?.ticketList.map((data) => (
-							<TicketCard data={data} handleClick={handleClick} />
-						))
-					}
-				</div>
-
-						
-				{/* The button to open modal */}
-				{/* <label htmlFor="my-modal-4" className="btn">open modal</label> */}
-
-				{/* Put this part before </body> tag */}
-				{/* <input type="checkbox" id="my-modal-4" className="modal-toggle" />
-				<label htmlFor="my-modal-4" className="cursor-pointer modal">
-					<label className="relative modal-box" htmlFor="">
-						<h3 className="text-lg font-bold">Congratulations random Internet user!</h3>
-						<p className="py-4">You've been selected for a chance to get one year of subscription to use Wikipedia for free!</p>
-					</label>
-				</label> */}
+							<div className="flex justify-center items-center flex-wrap gap-6">
+								{
+									eventData?.ticketList?.map((data) => (
+										<TicketCard data={data} handleClick={handleClick} />
+									))
+								}
+							</div>
+						</>
+					)
+				}
 			</div>
-			<Footer data={eventData.event} />
+			<Footer data={eventData?.event} />
 		</div>
 	)
 }
