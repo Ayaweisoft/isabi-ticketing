@@ -19,7 +19,7 @@ const index = () => {
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
-	const [successModal, setSuccessModal] = useState(true);
+	const [successModal, setSuccessModal] = useState(false);
 	const [ticketId, setTicketId] = useState("");
 	const [enableVerifyPayment, setEnableVerifyPayment] = useState(false);
 	const { ticket } = useContext(TicketContext)
