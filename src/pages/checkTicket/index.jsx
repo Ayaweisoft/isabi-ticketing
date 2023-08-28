@@ -43,12 +43,12 @@ const CheckTicket = () => {
 			<Header />
 			<div className="flex flex-col justify-center gap-4 items-center w-full h-[80vh] bg-[url('/src/assets/background.png')]">
 				<h2 className="font-bold text-4xl text-[#07360e] text-center">Check Ticket</h2>
-				<div className="flex flex-col py-10 px-6 gap-4 shadow-lg bg-white justify-center items-center">
-					<h2 className="text-center text-xl font-medium">Enter Ticket</h2>
+				<div className="flex flex-col items-center justify-center gap-4 px-6 py-10 bg-white shadow-lg">
+					<h2 className="text-xl font-medium text-center">Enter Ticket</h2>
 					<div className="form-control">
 						<div className="input-group">
 							<input type="text" placeholder="Search…" onChange={handleChange} className="input input-bordered" />
-							<button className="btn bg-green-500" onClick={handleSubmit}>
+							<button className="bg-[#348A40] text-white p-3 px-4" onClick={handleSubmit}>
 								Submit
 							</button>
 						</div>

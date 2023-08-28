@@ -160,15 +160,17 @@ const index = () => {
 			}
 			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
-				{isLoading && <div className="flex justify-center items-center h-screen">Loading...</div>}
-				{error && <div className="flex justify-center items-center h-screen">Error: {error.message}</div>}
+			{/* <div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]"> */}
+				{isLoading && <div className="flex items-center justify-center h-screen">Loading...</div>}
+				{error && <div className="flex items-center justify-center h-screen">Error: {error.message}</div>}
 				{
 					!isLoading && !error && eventData && (
 						<>
 							<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
-							<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
+							<h2 className='mb-6 text-lg font-bold text-[#07360e]'>Available Tickets</h2>
 
-							<div className="flex justify-center items-center flex-wrap gap-6">
+							<div className="flex flex-col w-full grid-cols-2 gap-5 p-4 md:grid lg:grid-cols-3 xl:grid-cols-4 md:px-8">
+								{/* <div className="flex flex-wrap items-center justify-center gap-6"> */}
 								{
 									eventData?.ticketList?.map((data) => (
 										<TicketCard data={data} handleClick={handleClick} />
@@ -178,6 +180,22 @@ const index = () => {
 						</>
 					)
 				}
+				{/* {
+					!isLoading && !error && eventData && (
+						<>
+							<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
+							<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
+
+							<div className="flex flex-wrap items-center justify-center gap-6">
+								{
+									eventData?.ticketList?.map((data) => (
+										<TicketCard data={data} handleClick={handleClick} />
+									))
+								}
+							</div>
+						</>
+					)
+				} */}
 			</div>
 			<Footer data={eventData?.event} />
 		</div>
