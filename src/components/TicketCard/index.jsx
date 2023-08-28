@@ -46,7 +46,7 @@ const TicketCard = ({ data, handleClick }) => {
 	}
     
 
-	console.log({data})
+	// console.log({data})
 
 
 
