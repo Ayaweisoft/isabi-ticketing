@@ -4,5 +4,4 @@ const appConfig = {
     appUrl: ""
 }
 
-
 export default appConfig;

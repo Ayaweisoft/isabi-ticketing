@@ -75,7 +75,7 @@ const TicketCard = ({ data, handleClick }) => {
             </div>
 			<div className="flex items-center justify-between w-full gap-6 p-2 h-fit">
 				<button className="flex items-center justify-center rounded-md px-4 py-1 h-full pb-[6px] text-2xl font-bold text-white bg-[#348A40]" onClick={decreaseNumberOfTicket}>-</button>
-				<input type="number" className='flex items-center justify-center w-full h-full py-1 text-xl font-bold text-center border rounded-md' value={numberOfTicket} onChange={setTicketNumber} />
+				<input type="text" className='flex items-center justify-center w-full h-full py-1.5 text-xl font-bold text-center border focus:border-[#348A40] focus:outline-[#348A40] rounded-md' value={numberOfTicket} onChange={setTicketNumber} />
 				<button className="flex items-center justify-center  rounded-md  px-4 py-1 h-full pb-[6px] text-2xl font-bold text-white bg-[#348A40]" onClick={increaseNumberOfTicket} >+</button>
 			</div>			
             <div className="flex flex-col justify-center items-center my-2.5 gap-2 w-full">

@@ -6,6 +6,13 @@ const serviceSuffix = ".php"
 
 /* Home/index */
 
+export const fetchEvents =  (id) => {
+    return ApiAdapter.fetchData({
+        url: "v2/get-all-event",
+        method: "get"    
+    })
+}
+
 export const fetchTicketDetails =  (id) => {
     return ApiAdapter.fetchData({
         url: "v2/get-ticket-by-event-id/" + id,

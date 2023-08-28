@@ -4,6 +4,7 @@ import { useState } from 'react'
 import './App.css'
 import ScrollToTop from './components/ScrollToTop';
 
+import Home from './pages/Home'
 import Ticket from './pages/Ticket'
 import CheckTicket from './pages/checkTicket'
 

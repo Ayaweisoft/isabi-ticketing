@@ -37,11 +37,11 @@ const index = ({ setModal, handleSubmit, setFormData, formData }) => {
 	// }
 
 	return (
-		<div className="fixed z-10 flex items-center justify-center w-full px-6 h-full">
-			<div className="absolute cursor-pointer flex w-full h-full z-10 bg-black/70" onClick={() => { setModal(false) }}></div>
-			<div className="z-20 flex flex-col items-center justify-center w-full sm:w-3/5 md:w-2/5 p-4 bg-white shadow-lg">
+		<div className="fixed z-10 flex items-center justify-center w-full h-full px-6">
+			<div className="absolute z-10 flex w-full h-full cursor-pointer bg-black/70" onClick={() => { setModal(false) }}></div>
+			<div className="z-20 flex flex-col items-center justify-center w-full p-4 bg-white rounded-md shadow-lg sm:w-3/5 md:w-2/5">
 				<form action="" className='flex flex-col items-center justify-center w-full gap-4' onSubmit={handleSubmit}>
-					<h2 className="text-2xl font-bold">Checkout</h2>
+					<h2 className="text-2xl font-bold text-[#348A40]">Checkout</h2>
 					<div className="w-full max-w-xs form-control">
 						<label className="label">
 							<span className="label-text">Name</span>
@@ -60,8 +60,7 @@ const index = ({ setModal, handleSubmit, setFormData, formData }) => {
 						</label>
 						<input type="phone" required name='phone' onChange={handleInput} placeholder="Enter Phone Number" className="w-full max-w-xs input input-bordered" />
 					</div>
-					<input className="btn" type="submit" value="Checkout" />
-					
+					<input className="bg-[#348A40] text-white px-5 py-3 rounded-md mt-4 cursor-pointer" type="submit" value="Checkout"  />
 				</form>
 			</div>
 		</div >

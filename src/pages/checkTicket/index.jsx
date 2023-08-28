@@ -48,7 +48,7 @@ const CheckTicket = () => {
 					<div className="form-control">
 						<div className="input-group">
 							<input type="text" placeholder="Search…" onChange={handleChange} className="input input-bordered" />
-							<button className="bg-[#348A40] text-white p-3 px-4" onClick={handleSubmit}>
+							<button className="bg-[#348A40] text-white p-3 px-4 cursor-pointer" onClick={handleSubmit}>
 								Submit
 							</button>
 						</div>

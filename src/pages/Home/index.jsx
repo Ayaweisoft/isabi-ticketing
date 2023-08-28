@@ -4,7 +4,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useParams } from 'react-router-dom'
 import getData from '../../utils/getData'
-import { fetchTicketDetails, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
+import { fetchEvents, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
 import { useState, useContext } from 'react'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
@@ -14,8 +14,7 @@ import appConfig from '../../configs/app.config'
 import generateTicketId from '../../utils/generateTicketId'
 
 const index = () => {
-	const { id } = useParams();
-	// console.log(id)
+	const id = "kjf"
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
@@ -33,8 +32,9 @@ const index = () => {
 
 	const { isLoading, error, data: eventData } = useQuery({
 		queryKey: ['ticketData'],
-		queryFn: () => getData(fetchTicketDetails, id),
+		queryFn: () => getData(fetchEvents),
 	})
+	
 
 
 	const handleClick = (id) => {
