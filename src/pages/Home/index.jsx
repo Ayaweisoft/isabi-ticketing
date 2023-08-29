@@ -1,10 +1,10 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useParams } from 'react-router-dom'
 import getData from '../../utils/getData'
-import { fetchEvents, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
+import { fetchTicketDetails, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
 import { useState, useContext } from 'react'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
@@ -12,9 +12,16 @@ import SuccessModal from '../../components/SuccessModal'
 import { TicketContext } from '../../contexts/TicketContext'
 import appConfig from '../../configs/app.config'
 import generateTicketId from '../../utils/generateTicketId'
+import GentleLoader from '../../components/GentleLoader'
+
+const months = [
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+	"Nov", "Dec"
+]
 
 const index = () => {
-	const id = "kjf"
+	const { id } = useParams();
+	// console.log(id)
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
@@ -32,9 +39,12 @@ const index = () => {
 
 	const { isLoading, error, data: eventData } = useQuery({
 		queryKey: ['ticketData'],
-		queryFn: () => getData(fetchEvents),
+		queryFn: () => getData(fetchTicketDetails, id),
 	})
-	
+
+	const date = useMemo(() => new Date(eventData?.event?.startDate), [eventData?.event?.startDate])
+
+	console.log("date 00000000000000000: ", date)
 
 
 	const handleClick = (id) => {
@@ -149,7 +159,7 @@ const index = () => {
 		initiatePayment();
 	}
 
-	console.log("data: ", eventData);
+	console.log("event data: ", eventData);
 
 	return (
 		<div className=''>
@@ -160,12 +170,23 @@ const index = () => {
 			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
 			{/* <div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]"> */}
-				{isLoading && <div className="flex items-center justify-center h-screen">Loading...</div>}
+				{isLoading && <GentleLoader />}
 				{error && <div className="flex items-center justify-center h-screen">Error: {error.message}</div>}
 				{
 					!isLoading && !error && eventData && (
 						<>
-							<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
+							<div className="flex flex-col items-center justify-center w-3/4 max-w-sm gap-1 mb-6 text-center">
+								<h2 className='text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
+								<h3 className='text-xs font-bold text-[#07360e] italic'>by {eventData?.event?.companyName}</h3>
+							</div>
+
+							<div className="flex flex-col items-center justify-center w-3/4 max-w-sm gap-2 mb-6 text-center">
+								<h3 className='text-sm font-bold text-[#07360e]'>Date: {months[date?.getMonth()]} {date?.getDate()}, {date?.getFullYear()}</h3>
+								<h3 className='text-sm font-bold text-[#07360e]'>Start Time: {eventData?.event?.startTime}</h3>
+								{
+									eventData?.event?.venue && <h3 className='text-sm font-bold text-[#07360e]'>Venue: {eventData?.event?.venue}</h3>
+								}
+							</div>
 							<h2 className='mb-6 text-lg font-bold text-[#07360e]'>Available Tickets</h2>
 
 							<div className="flex flex-col w-full grid-cols-2 gap-5 p-4 md:grid lg:grid-cols-3 xl:grid-cols-4 md:px-8">

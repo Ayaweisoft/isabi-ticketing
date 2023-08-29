@@ -12,6 +12,7 @@ import SuccessModal from '../../components/SuccessModal'
 import { TicketContext } from '../../contexts/TicketContext'
 import appConfig from '../../configs/app.config'
 import generateTicketId from '../../utils/generateTicketId'
+import GentleLoader from '../../components/GentleLoader'
 
 const months = [
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
@@ -169,7 +170,7 @@ const index = () => {
 			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
 			{/* <div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]"> */}
-				{isLoading && <div className="flex items-center justify-center h-screen">Loading...</div>}
+				{isLoading && <GentleLoader />}
 				{error && <div className="flex items-center justify-center h-screen">Error: {error.message}</div>}
 				{
 					!isLoading && !error && eventData && (
