@@ -11,7 +11,7 @@ const Footer = ({ data }) => {
           <p className='flex-1 text-center md:text-left'>{ data?.aboutEvent }</p>
         </div>
       </div>
-        <p className="font-medium text-white text-center py-2 bg-[#348A40] text-sm">copyright  i-sabi v2 2021</p>
+        <p className="font-medium text-white text-center py-2 bg-[#348A40] text-sm">copyright @ i-sabi 2023</p>
     </>
   )
 }
