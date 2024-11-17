@@ -3,7 +3,7 @@ import React from 'react'
 const TicketData = ({ data }) => {
   return (
     <div className='flex flex-col'>
-        <h2 className='font-bold text-xl'>Ticket Data</h2>
+        <h2 className='font-bold text-xl' >Ticket Details</h2>
         <div className="flex flex-col">
             <span className=''>Name:    {data.name}</span>
             <span className=''>Email:   {data.email}</span>
