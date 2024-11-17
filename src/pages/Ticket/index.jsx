@@ -21,7 +21,7 @@ const months = [
 
 const index = () => {
 	const { id } = useParams();
-	// console.log(id)
+	console.log({ id })
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
@@ -77,6 +77,7 @@ const index = () => {
 			numberOfTicket: ticket.numberOfTicket,
 			amountPaid: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
 		};
+		console.log({ requestData });
 
 		const result = await submitTicket(requestData);
 		console.log("result: ", result);
@@ -128,7 +129,9 @@ const index = () => {
 
 	const paymentParameters = {
 		merchant_code: "MX46047",
-		pay_item_id: "1476285",
+		pay_item_id: "Default_Payable_MX46047",
+		// merchant_code: "MX69115",
+		// pay_item_id: "Default_Payable_MX69115",
 		txn_ref: trxRef,
 		amount: parseFloat(ticket?.numberOfTicket * ticket?.amount * 100).toString(),
 		cust_name: formData.name,
