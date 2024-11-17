@@ -7,7 +7,7 @@ const Footer = ({ data }) => {
       {/* <div className='flex justify-center items-center bg-[#07360e] flex-col py-8 px-16 gap-4'> */}
         <h1 className='text-xl font-bold text- md:mb-4'>About Event</h1>
         <div className="relative flex flex-col items-center justify-center w-full gap-4 md:gap-8 md:flex-row h-fit">
-          <img className='flex-1 md:min-h-[400px] object-cover w-32 h-32 md:rounded-sm' src={data?.image_url} alt="" srcset="" />
+          <img className='flex-1 md:min-h-[400px] object-cover w-32 h-32 md:rounded-sm' src={data?.image_url} alt="" srcSet="" />
           <p className='flex-1 text-center md:text-left'>{ data?.aboutEvent }</p>
         </div>
       </div>

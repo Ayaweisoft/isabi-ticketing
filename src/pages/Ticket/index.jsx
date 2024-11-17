@@ -1,11 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useParams } from 'react-router-dom'
 import getData from '../../utils/getData'
 import { fetchTicketDetails, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
-import { useState, useContext } from 'react'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
 import SuccessModal from '../../components/SuccessModal'
@@ -19,15 +18,13 @@ const months = [
 	"Nov", "Dec"
 ]
 
-const index = () => {
+const Index = () => {  // I recommend using PascalCase for component names
 	const { id } = useParams();
-	// console.log(id)
 
 	const [modal, setModal] = useState(false);
 	const [trxRef, setTrxRef] = useState(Date.now().toString());
 	const [successModal, setSuccessModal] = useState(false);
 	const [ticketId, setTicketId] = useState("");
-	const [enableVerifyPayment, setEnableVerifyPayment] = useState(false);
 	const { ticket } = useContext(TicketContext)
 
 	const [formData, setFormData] = useState({
@@ -44,12 +41,7 @@ const index = () => {
 
 	const date = useMemo(() => new Date(eventData?.event?.startDate), [eventData?.event?.startDate])
 
-	console.log("date 00000000000000000: ", date)
-
-
 	const handleClick = (id) => {
-		console.log('clicked: ', id);
-
 		setModal(true);
 	}
 
@@ -57,9 +49,6 @@ const index = () => {
 		var tId = await generateTicketId(6, id);
 		setTicketId(tId.toString());
 
-		console.log("tid: ", tId);
-
-		console.log("submitting vote to db");
 		let requestData = {
 			message: "Payment successful",
 			ref: tx_ref,
@@ -79,12 +68,10 @@ const index = () => {
 		};
 
 		const result = await submitTicket(requestData);
-		console.log("result: ", result);
 
 		if (result?.statusText === "OK") {
 			setModal(false);
 			setSuccessModal(true);
-			// setTicketId(result.data?.data?.ticketId);
 		}
 	}
 
@@ -95,25 +82,14 @@ const index = () => {
 			amount
 		});
 
-		console.log("verifyData: ", verifyData);
-
-		if (!verifyData) {
-			console.log('error: ', err);
-			return;
-		}
-
 		let successCodes = ["10", "11", "00"];
 
 		if (successCodes.includes(verifyData.data.ResponseCode)) {
 			submitVoteToDB(verifyData.data.PaymentReference, verifyData.data.MerchantReference);
-		} else {
-			console.log("interswitch faliure");
 		}
-
 	}
 
 	const handlePaymentResponse = (response) => {
-		console.log("response: ", response);
 		if (response.resp === "00") {
 			paymentCallback(
 				"MX46047",
@@ -121,7 +97,6 @@ const index = () => {
 				parseFloat(ticket?.numberOfTicket * ticket?.amount).toString()
 			);
 		} else {
-			// this.finalizingPayment = false;
 			console.log("payment unsuccessful")
 		}
 	}
@@ -141,11 +116,8 @@ const index = () => {
 	}
 
 	const initiatePayment = async () => {
-
 		window.webpayCheckout(paymentParameters);
 	}
-
-	console.log("tid: ", typeof ticketId)
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
@@ -154,22 +126,17 @@ const index = () => {
 			amount: ticket.numberOfTicket * ticket.amount,
 		})
 		setTrxRef(Date.now().toString());
-
-		console.log('form data: ', formData);
 		initiatePayment();
 	}
 
-	console.log("event data: ", eventData);
-
 	return (
-		<div className=''>
+		<div>
 			<Header />
 			{
 				modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />
 			}
 			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
-			{/* <div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]"> */}
 				{isLoading && <GentleLoader />}
 				{error && <div className="flex items-center justify-center h-screen">Error: {error.message}</div>}
 				{
@@ -190,36 +157,19 @@ const index = () => {
 							<h2 className='mb-6 text-lg font-bold text-[#07360e]'>Available Tickets</h2>
 
 							<div className="flex flex-col w-full grid-cols-2 gap-5 p-4 md:grid lg:grid-cols-3 xl:grid-cols-4 md:px-8">
-								{/* <div className="flex flex-wrap items-center justify-center gap-6"> */}
 								{
 									eventData?.ticketList?.map((data) => (
-										<TicketCard data={data} handleClick={handleClick} />
+										<TicketCard key={data._id} data={data} handleClick={handleClick} /> 
 									))
 								}
 							</div>
 						</>
 					)
 				}
-				{/* {
-					!isLoading && !error && eventData && (
-						<>
-							<h2 className='mb-6 text-3xl font-bold text-[#07360e] text-center'>{eventData?.event?.eventName}</h2>
-							<h2 className='mb-6 text-2xl font-bold text-[#07360e]'>Available Tickets</h2>
-
-							<div className="flex flex-wrap items-center justify-center gap-6">
-								{
-									eventData?.ticketList?.map((data) => (
-										<TicketCard data={data} handleClick={handleClick} />
-									))
-								}
-							</div>
-						</>
-					)
-				} */}
 			</div>
 			<Footer data={eventData?.event} />
 		</div>
 	)
 }
 
-export default index
+export default Index;
