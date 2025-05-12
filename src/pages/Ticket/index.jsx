@@ -13,6 +13,7 @@ import { TicketContext } from '../../contexts/TicketContext'
 import appConfig from '../../configs/app.config'
 import generateTicketId from '../../utils/generateTicketId'
 import GentleLoader from '../../components/GentleLoader'
+import { toast } from 'react-toastify'
 
 const months = [
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
@@ -29,6 +30,7 @@ const index = () => {
 	const [ticketId, setTicketId] = useState("");
 	const [enableVerifyPayment, setEnableVerifyPayment] = useState(false);
 	const { ticket } = useContext(TicketContext)
+	const [loading, setLoading] = useState(false)
 
 	const [formData, setFormData] = useState({
 		name: '',
@@ -82,7 +84,7 @@ const index = () => {
 		const result = await submitTicket(requestData);
 		console.log("result: ", result);
 
-		if (result?.statusText === "OK") {
+		if (result?.status == 200) {
 			setModal(false);
 			setSuccessModal(true);
 			// setTicketId(result.data?.data?.ticketId);
@@ -90,10 +92,11 @@ const index = () => {
 	}
 
 	const paymentCallback = async (merchantCode, txnRef, amount) => {
+		console.log("verifying payment");
 		const verifyData = await verifyPayment({
 			merchantcode: merchantCode,
 			reference: txnRef,
-			amount
+            amount: !!amount ? amount : (Number(ticket?.amount) * Number(ticket?.numberOfTicket) * 100)?.toString(),
 		});
 
 		console.log("verifyData: ", verifyData);
@@ -110,21 +113,28 @@ const index = () => {
 		} else {
 			console.log("interswitch faliure");
 		}
-
 	}
 
-	const handlePaymentResponse = (response) => {
-		console.log("response: ", response);
-		if (response.resp === "00") {
-			paymentCallback(
+	const handlePaymentResponse = async (response) => {
+		setLoading(true)
+		try {
+			console.log("response: ", response);
+			await paymentCallback(
 				"MX46047",
 				trxRef,
-				parseFloat(ticket?.numberOfTicket * ticket?.amount).toString()
+				response?.amount?.toString() || '',
 			);
-		} else {
-			// this.finalizingPayment = false;
-			console.log("payment unsuccessful")
+		} catch (error) {
+			console.log("error: ", error);
+			toast.error(error?.message || error?.data?.message || error?.response?.data?.message  ||  "Error verifying payment");
+		} finally {
+			setLoading(false)
 		}
+		// if (response.resp === "00") {
+		// } else {
+		// 	// this.finalizingPayment = false;
+		// 	console.log("payment unsuccessful")
+		// }
 	}
 
 	const paymentParameters = {
@@ -160,6 +170,7 @@ const index = () => {
 
 		console.log('form data: ', formData);
 		initiatePayment();
+		setModal(false);
 	}
 
 	console.log("event data: ", eventData);
@@ -173,7 +184,7 @@ const index = () => {
 			{successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} />}
 			<div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]">
 			{/* <div className="flex flex-col justify-center relative items-center w-full h-fit pt-24 py-16 bg-[url('/src/assets/background.png')]"> */}
-				{isLoading && <GentleLoader />}
+				{(isLoading || loading) && <GentleLoader />}
 				{error && <div className="flex items-center justify-center h-screen">Error: {error.message}</div>}
 				{
 					!isLoading && !error && eventData && (
