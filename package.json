@@ -5,10 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm install --legacy-peer-deps",
     "build": "vite build",
-    "preview": "vite preview",
-     "postinstall": "npm install --legacy-peer-deps || true"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.24.10",
