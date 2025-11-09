@@ -44,4 +44,4 @@ jobs:
 
       - name: Run script on EC2 instance in background
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'nohup bash /home/isabi/deploy-ticketing.sh > /home/isabi/logs/ticketing.log 2>&1 &'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'nohup bash /home/isabi/i-sabi-devops/scripts/update-ticketing.sh > /home/isabi/logs/ticketing.log 2>&1 &'
