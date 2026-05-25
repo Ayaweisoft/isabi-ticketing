@@ -244,6 +244,7 @@ const Ticket = () => {
         currency: 'NGN',
         firstname: formData.name,
         phone: formData.phone,
+        channels: ['card', 'ussd', 'bank_transfer', 'bank', 'qr', 'mobile_money'],
         metadata: {
           custom_fields: [
             { display_name: 'Phone', variable_name: 'phone', value: formData.phone },
