@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.gitignore
+
+# Local-only env overrides — never ship these into a Docker layer
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor / OS noise
+.DS_Store
+*.log
+.vscode
+.idea
