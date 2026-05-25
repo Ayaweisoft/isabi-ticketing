@@ -2,19 +2,71 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    
-    <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-    <link rel="icon" type="image/ico" href="favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Isabi Ticketing</title>
+    <!-- Primary SEO -->
+    <title>i-Sabi | Discover Events &amp; Buy Tickets in Nigeria</title>
+    <meta name="description" content="Discover concerts, festivals, shows and more across Nigeria. Buy tickets securely and instantly on i-Sabi — Nigeria's trusted event ticketing platform." />
+    <meta name="keywords" content="Nigeria events, buy tickets online, concerts Nigeria, Lagos events, i-Sabi tickets, event ticketing Nigeria, Abuja events" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="i-Sabi" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="i-Sabi" />
+    <meta property="og:title" content="i-Sabi | Discover Events &amp; Buy Tickets in Nigeria" />
+    <meta property="og:description" content="Discover concerts, festivals, shows and more across Nigeria. Buy tickets securely and instantly on i-Sabi." />
+    <meta property="og:image" content="https://ticketing.i-sabi.com.ng/logo.png" />
+    <meta property="og:image:width" content="630" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://ticketing.i-sabi.com.ng" />
+    <meta property="og:locale" content="en_NG" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@isabi_ng" />
+    <meta name="twitter:creator" content="@isabi_ng" />
+    <meta name="twitter:title" content="i-Sabi | Discover Events &amp; Buy Tickets in Nigeria" />
+    <meta name="twitter:description" content="Discover concerts, festivals, shows and more across Nigeria. Buy tickets securely and instantly on i-Sabi." />
+    <meta name="twitter:image" content="https://ticketing.i-sabi.com.ng/logo.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://ticketing.i-sabi.com.ng" />
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://api.i-sabi.com.ng" />
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "i-Sabi",
+      "url": "https://ticketing.i-sabi.com.ng",
+      "description": "Nigeria's trusted event ticketing platform",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://ticketing.i-sabi.com.ng/discover?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script src="https://newwebpay.interswitchng.com/inline-checkout.js"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
   </body>
 </html>
