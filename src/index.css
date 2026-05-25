@@ -1,3 +1,302 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #0a0a0a;
+    color: #f9fafb;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@layer utilities {
+  /* ── Typography ── */
+  .text-gradient-green {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 60%, #4ade80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Glass cards ── */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .card-dark {
+    @apply bg-[#111111] border border-white/[0.06] rounded-2xl;
+  }
+
+  /* ── Glows ── */
+  .glow-green {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.25), 0 0 60px rgba(34, 197, 94, 0.08);
+  }
+
+  .glow-green-sm {
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white
+      bg-gradient-to-r from-[#22c55e] to-[#16a34a]
+      hover:from-[#16a34a] hover:to-[#15803d]
+      shadow-lg shadow-green-500/20 hover:shadow-green-500/30
+      transition-all duration-200 active:scale-[0.98];
+  }
+
+  /* Shimmer CTA button */
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg,
+      #22c55e 0%,
+      #16a34a 40%,
+      #4ade80 50%,
+      #16a34a 60%,
+      #22c55e 100%
+    );
+    background-size: 300% 100%;
+    animation: shimmerBtn 3s linear infinite;
+  }
+
+  /* ── Inputs ── */
+  .input-dark {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm
+      placeholder-white/20 focus:outline-none focus:border-[#22c55e]/50 focus:bg-white/[0.07]
+      transition-all duration-200;
+  }
+
+  /* ── Scroll reveal ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-scale {
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal-scale.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Stagger delays */
+  .stagger-1 { transition-delay: 60ms; }
+  .stagger-2 { transition-delay: 120ms; }
+  .stagger-3 { transition-delay: 180ms; }
+  .stagger-4 { transition-delay: 240ms; }
+  .stagger-5 { transition-delay: 300ms; }
+  .stagger-6 { transition-delay: 360ms; }
+
+  /* ── Ambient orbs ── */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  .orb-green {
+    background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+    animation: orbFloat 8s ease-in-out infinite;
+  }
+
+  .orb-green-dim {
+    background: radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 70%);
+    animation: orbFloatReverse 11s ease-in-out infinite;
+  }
+
+  /* ── Ticket card shine ── */
+  .ticket-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ticket-shine::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.04),
+      transparent
+    );
+    transform: skewX(-20deg);
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+
+  .ticket-shine:hover::after {
+    left: 160%;
+  }
+
+  /* ── Feature card hover ── */
+  .feature-card {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 24px rgba(34,197,94,0.06);
+  }
+
+  /* ── Gradient border ── */
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(34,197,94,0.3), transparent, rgba(34,197,94,0.15));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── App store badges ── */
+  .app-badge {
+    @apply inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.09]
+      hover:bg-white/[0.1] hover:border-white/[0.15] transition-all duration-200 active:scale-[0.98]
+      text-white no-underline;
+  }
+
+  /* ── Number counter ── */
+  .stat-number {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* ── Aurora gradient wave ── */
+  .aurora-bar {
+    position: absolute;
+    left: -10%;
+    width: 120%;
+    pointer-events: none;
+    filter: blur(48px);
+    animation: auroraShift 10s ease-in-out infinite;
+  }
+
+  /* ── Scan line sweep ── */
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(34,197,94,0.15) 25%,
+      rgba(34,197,94,0.4) 50%,
+      rgba(34,197,94,0.15) 75%,
+      transparent 100%
+    );
+    animation: scanLine 8s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Morphing blob ── */
+  .morph-blob {
+    position: absolute;
+    pointer-events: none;
+    filter: blur(60px);
+    animation: morphBlob 12s ease-in-out infinite, orbFloat 8s ease-in-out infinite;
+  }
+
+  /* ── Rotating ring ── */
+  .spin-ring {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  /* ── Noise grain overlay (very subtle depth texture) ── */
+  .noise-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+
+  /* ── Floating particle ── */
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: #22c55e;
+    pointer-events: none;
+    animation: particleRise ease-in infinite;
+    bottom: 0;
+  }
+
+  /* ── Glowing ring pulse ── */
+  .glow-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(34,197,94,0.12);
+    animation: glowPulse 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* ── Meteor streak ── */
+  .meteor-streak {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: rgba(34,197,94,0.8);
+    pointer-events: none;
+    box-shadow: 0 0 6px 2px rgba(34,197,94,0.3), 60px 0 20px 0px rgba(34,197,94,0.15), 120px 0 30px -4px rgba(34,197,94,0.05);
+    animation: meteor linear infinite;
+  }
+}
