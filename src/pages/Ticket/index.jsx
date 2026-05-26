@@ -222,12 +222,7 @@ const Ticket = () => {
       }
 
       const data = verifyRes?.data
-      const SUCCESS_CODES = ['10', '11', '00']
-      const verified =
-        data?.status === true ||
-        data?.status === 'success' ||
-        SUCCESS_CODES.includes(data?.ResponseCode) ||
-        SUCCESS_CODES.includes(data?.data?.ResponseCode)
+      const verified = data?.status === true || data?.status === 'success'
 
       if (data?.status === 'pending' || data?.data?.status === 'pending') {
         toast.info('Payment is being processed. Your ticket will be sent to your email once confirmed.')
