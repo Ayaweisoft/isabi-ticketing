@@ -50,7 +50,10 @@ const ShareModal = ({ event, onClose }) => {
   const [tab, setTab] = useState('share')
   const [downloading, setDownloading] = useState(false)
 
-  const url = window.location.href
+  // Canonical URL — always uses event ID so QR and share links are identical
+  const url = event?._id
+    ? `${window.location.origin}/ticket/${event._id}`
+    : window.location.href
   const text = `🎟️ ${event?.eventName || 'Check out this event'} — get your tickets now on i-Sabi!`
   const eventSlug = (event?.eventName || 'event').replace(/\s+/g, '-').toLowerCase()
 

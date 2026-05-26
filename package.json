@@ -9,13 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.22.9",
     "@tanstack/react-query": "^4.24.10",
     "axios": "^1.3.4",
     "daisyui": "^2.51.3",
-    
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-interswitch": "^1.0.8",
     "react-router-dom": "^6.8.2",
     "react-toastify": "^11.0.5"
   },
