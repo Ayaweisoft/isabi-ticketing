@@ -11,16 +11,16 @@ ENV VITE_API_PREFIX=$VITE_API_PREFIX
 ENV VITE_PAYSTACK_PUBLIC_KEY=$VITE_PAYSTACK_PUBLIC_KEY
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile
 
 # Copy source code (.dockerignore excludes node_modules, .git, .env.development)
 COPY . .
 
 # Build the Vite app — picks up ENV vars above (overrides .env.production values)
-RUN yarn build
+RUN pnpm build
 
 # ── Production stage ──────────────────────────────────────────────────────────
 FROM nginx:alpine

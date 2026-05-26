@@ -12,26 +12,27 @@ import { DotGrid, QRPattern, TicketOutline } from '../../components/Decor'
 const CheckTicket = () => {
   useSEO({ title: 'Verify Ticket', description: 'Verify the authenticity of your event ticket on i-Sabi.' })
   const { id } = useParams()
-  const [enableFetch, setEnableFetch] = useState(false)
   const [input, setInput] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [submittedId, setSubmittedId] = useState('')
+  const [enableFetch, setEnableFetch] = useState(false)
 
   const { data: eventData } = useQuery({
-    queryKey: ['eventData'],
+    queryKey: ['eventData', id],
     queryFn: () => getData(fetchTicketDetails, id),
   })
 
   const { isLoading: loading, error: err, data: ticketData } = useQuery({
-    queryKey: ['checkTicketData', input],
-    queryFn: () => getData(checkTicket, { ticketId: input, eventId: id }),
+    queryKey: ['checkTicketData', submittedId],
+    queryFn: () => getData(checkTicket, { ticketId: submittedId, eventId: id }),
     refetchOnWindowFocus: false,
-    enabled: enableFetch && !!input,
+    retry: false,
+    enabled: enableFetch && !!submittedId,
   })
 
   const handleSubmit = (e) => {
     e?.preventDefault()
     if (!input.trim()) return
-    setSubmitted(true)
+    setSubmittedId(input.trim())
     setEnableFetch(true)
   }
 
@@ -78,7 +79,6 @@ const CheckTicket = () => {
                     value={input}
                     onChange={(e) => {
                       setInput(e.target.value)
-                      setSubmitted(false)
                       setEnableFetch(false)
                     }}
                     placeholder="e.g. TK-123456"
@@ -115,7 +115,7 @@ const CheckTicket = () => {
                 )}
               </button>
 
-              {err && submitted && (
+              {err && (
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium animate-[fadeIn_0.2s_ease-out]">
                   <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -132,7 +132,7 @@ const CheckTicket = () => {
           )}
 
           {/* Not found state */}
-          {submitted && !loading && !err && !ticketData && (
+          {submittedId && !loading && !err && !ticketData && (
             <div className="text-center py-6 text-white/25 text-sm">
               No ticket found with that ID.
             </div>
