@@ -38,8 +38,8 @@ export const verifyPaystackPayment = (reference) => {
 }
 
 // POST /v2/save-purchased-ticket
-// Body: { eventId, ticketId, email, phone, name, quantity, mobile: true, ...extras }
-// Internally: deducts balance / routes to Interswitch, sends email+SMS, generates QR
+// Body: { eventId, ticketId, email, phone, name, quantity, ref, trax, parentTicket, amount, ... }
+// Saves ticket after Paystack payment is verified — sends confirmation email + QR
 export const submitTicket = (data) => {
     return ApiAdapter.fetchData({
         url: "v2/save-purchased-ticket",

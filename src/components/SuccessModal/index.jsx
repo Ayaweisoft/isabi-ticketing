@@ -177,7 +177,7 @@ const CalendarSection = ({ event }) => {
   )
 }
 
-const SuccessModal = ({ setSuccessModal, ticketId, eventId, event }) => {
+const SuccessModal = ({ setSuccessModal, ticketId, mongoId, eventId, event }) => {
   return (
     <>
       <Confetti />
@@ -240,9 +240,9 @@ const SuccessModal = ({ setSuccessModal, ticketId, eventId, event }) => {
                 </Link>
               )}
 
-              {ticketId && (
+              {mongoId && (
                 <Link
-                  to={`/invoice/${ticketId}`}
+                  to={`/invoice/${mongoId}`}
                   onClick={() => setSuccessModal(false)}
                   className="w-full py-2.5 rounded-xl font-bold text-white/60 hover:text-white text-sm
                     bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.07]
