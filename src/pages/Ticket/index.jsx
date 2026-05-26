@@ -5,7 +5,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useParams, Link } from 'react-router-dom'
 import getData from '../../utils/getData'
-import { fetchEventById, fetchTicketDetails, verifyPayment, submitTicket } from '../../adapters/CommonAdapter'
+import { fetchEventById, fetchTicketDetails, verifyPaystackPayment, submitTicket } from '../../adapters/CommonAdapter'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
 import SuccessModal from '../../components/SuccessModal'
@@ -210,19 +210,18 @@ const Ticket = () => {
   const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
     try {
-      const verifyData = await verifyPayment({
-        reference: transaction.reference,
-        amount: (Number(ticket?.amount) * Number(ticket?.numberOfTicket) * 100).toString(),
-      })
-      // Handle both flat and nested Paystack verify response shapes
-      const status =
-        verifyData?.data?.status ||
-        verifyData?.data?.data?.status ||
-        (verifyData?.status === 200 ? 'success' : null)
-      if (status === 'success') {
+      const res = await verifyPaystackPayment(transaction.reference)
+      const data = res?.data
+      const SUCCESS_CODES = ['10', '11', '00']
+      const verified =
+        data?.status === true ||
+        data?.status === 'success' ||
+        SUCCESS_CODES.includes(data?.ResponseCode) ||
+        SUCCESS_CODES.includes(data?.data?.ResponseCode)
+
+      if (verified) {
         await submitVoteToDB(transaction.reference, transaction.transaction || transaction.reference)
-      } else if (status === 'pending') {
-        // Async channels (bank_transfer) — payment initiated but not yet confirmed
+      } else if (data?.status === 'pending' || data?.data?.status === 'pending') {
         toast.info('Payment is being processed. Your ticket will be sent to your email once confirmed.')
         setSuccessModal(true)
       } else {
@@ -246,7 +245,7 @@ const Ticket = () => {
         currency: 'NGN',
         firstname: formData.name,
         phone: formData.phone,
-        channels: ['card', 'ussd', 'bank_transfer', 'bank', 'qr', 'mobile_money'],
+        channels: ['card', 'ussd', 'bank_transfer', 'bank'],
         metadata: {
           custom_fields: [
             { display_name: 'Phone', variable_name: 'phone', value: formData.phone },
@@ -258,7 +257,6 @@ const Ticket = () => {
         onCancel: () => toast.info('Payment cancelled'),
       })
     } catch (err) {
-      console.error('Paystack error:', err)
       toast.error('Could not open payment. Please refresh and try again.')
     }
   }
