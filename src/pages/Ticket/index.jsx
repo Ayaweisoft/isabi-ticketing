@@ -203,15 +203,25 @@ const Ticket = () => {
     if (ok) {
       setSuccessModal(true)
     } else {
-      toast.error(`Ticket could not be saved. Quote ref ${tx_ref} when contacting support.`)
+      throw new Error(`Ticket save returned ${result?.status}. Quote ref ${tx_ref}.`)
     }
   }
 
   const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
     try {
-      const res = await verifyPaystackPayment(transaction.reference)
-      const data = res?.data
+      // Step 1 — verify payment
+      let verifyRes
+      try {
+        verifyRes = await verifyPaystackPayment(transaction.reference)
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Verification failed'
+        console.error('Verify error:', err?.response?.data || err)
+        toast.error(`Verify error: ${msg}`)
+        return
+      }
+
+      const data = verifyRes?.data
       const SUCCESS_CODES = ['10', '11', '00']
       const verified =
         data?.status === true ||
@@ -219,16 +229,25 @@ const Ticket = () => {
         SUCCESS_CODES.includes(data?.ResponseCode) ||
         SUCCESS_CODES.includes(data?.data?.ResponseCode)
 
-      if (verified) {
-        await submitVoteToDB(transaction.reference, transaction.transaction || transaction.reference)
-      } else if (data?.status === 'pending' || data?.data?.status === 'pending') {
+      if (data?.status === 'pending' || data?.data?.status === 'pending') {
         toast.info('Payment is being processed. Your ticket will be sent to your email once confirmed.')
         setSuccessModal(true)
-      } else {
-        toast.error(`Payment could not be confirmed. Quote ref ${transaction.reference} when contacting support.`)
+        return
       }
-    } catch (err) {
-      toast.error(err?.message || err?.response?.data?.message || 'Error verifying payment')
+
+      if (!verified) {
+        toast.error(`Payment could not be confirmed. Quote ref ${transaction.reference} when contacting support.`)
+        return
+      }
+
+      // Step 2 — save ticket
+      try {
+        await submitVoteToDB(transaction.reference, transaction.transaction || transaction.reference)
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Could not save ticket'
+        console.error('Save ticket error:', err?.response?.data || err)
+        toast.error(`Save ticket error: ${msg}. Quote ref ${transaction.reference}.`)
+      }
     } finally {
       setLoading(false)
     }
