@@ -28,13 +28,12 @@ export const fetchTicketDetails = (id) => {
     })
 }
 
-// POST /v2/verify-payment
-// Body: { merchantcode, reference, amount }
-export const verifyPayment = (data) => {
+// POST /v2/utility-bills/paystack-verify/public — no auth required
+export const verifyPaystackPayment = (reference) => {
     return ApiAdapter.fetchData({
-        url: "v2/verify-payment",
+        url: "v2/utility-bills/paystack-verify/public",
         method: "post",
-        data
+        data: { reference }
     })
 }
 
