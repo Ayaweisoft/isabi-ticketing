@@ -11,7 +11,8 @@ import { DotGrid, TicketOutline, Sparkle } from '../../components/Decor'
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const TicketResult = ({ data, eventId }) => {
-  const tickets = Array.isArray(data) ? data : data?.tickets || (data ? [data] : [])
+  const raw = data?.tickets ?? data
+  const tickets = Array.isArray(raw) ? raw : (raw ? [raw] : [])
 
   if (!tickets.length) {
     return (
