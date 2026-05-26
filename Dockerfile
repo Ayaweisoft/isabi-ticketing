@@ -22,20 +22,30 @@ COPY . .
 # Build the Vite app — picks up ENV vars above (overrides .env.production values)
 RUN yarn build
 
-# Production stage - lightweight nginx
+# ── Production stage ──────────────────────────────────────────────────────────
 FROM nginx:alpine
 
-# Copy custom nginx config
+# Add Node.js to run the meta-tag server alongside nginx
+RUN apk add --no-cache nodejs
+
+# nginx config with bot detection + proxy to meta server
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy built assets from dist folder (Vite default output)
+# Meta-tag server (handles og:image for social crawlers)
+RUN mkdir -p /app
+COPY meta-server.js /app/meta-server.js
+
+# Start script: launches meta server then nginx
+COPY docker-start.sh /docker-start.sh
+RUN chmod +x /docker-start.sh
+
+# Copy built SPA assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80
 EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:80/health || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/docker-start.sh"]
