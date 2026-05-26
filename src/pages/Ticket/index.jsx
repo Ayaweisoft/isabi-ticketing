@@ -130,12 +130,12 @@ const Ticket = () => {
   const revealRef = useScrollReveal()
 
   const [modal, setModal] = useState(false)
-  const [trxRef, setTrxRef] = useState(Date.now().toString())
   const [successModal, setSuccessModal] = useState(false)
-  const [ticketId, setTicketId] = useState('')
+  const [ticketId, setTicketId] = useState('')       // display ID shown to user e.g. "A1B2C3"
+  const [mongoTicketId, setMongoTicketId] = useState('') // data._id for invoice URL
   const [loading, setLoading] = useState(false)
   const { ticket } = useContext(TicketContext)
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', amount: 0 })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '' })
 
   const { isLoading: eventLoading, data: eventInfo } = useQuery({
     queryKey: ['eventById', id],
@@ -143,7 +143,7 @@ const Ticket = () => {
     enabled: !!id,
   })
 
-  const { isLoading: ticketLoading, error, data: ticketData } = useQuery({
+  const { isLoading: ticketLoading, data: ticketData } = useQuery({
     queryKey: ['ticketData', id],
     queryFn: () => getData(fetchTicketDetails, id),
     enabled: !!id,
@@ -173,68 +173,86 @@ const Ticket = () => {
     type: 'event',
   })
 
-  const handleClick = () => setModal(true)
+  const saveTicket = async () => {
+    const displayId = await generateTicketId(6, id)  // e.g. "A1B2C3"
+    setTicketId(displayId.toString())
 
-  const submitVoteToDB = async (tx_ref, trans_id) => {
-    // Generate ticket ID and use the local value directly — don't read stale state
-    const tId = await generateTicketId(6, id)
-    setTicketId(tId.toString())
-    const requestData = {
-      eventId: event._id,
-      ticketId: ticket._id,
-      email: formData.email,
-      phone: formData.phone,
-      name: formData.name,
-      quantity: ticket.numberOfTicket,
-      mobile: true,
-      message: 'Payment successful',
-      ref: tx_ref,
-      trax: trans_id,
-      ticketDatabaseId: ticket._id,
-      parentTicket: tId.toString(), // use local var, not stale ticketId state
-      amount: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
-      ticketType: ticket.ticketType,
-      imageUrl: ticket.imageUrl,
-      numberOfTicket: ticket.numberOfTicket,
-      amountPaid: parseFloat(ticket?.numberOfTicket * ticket?.amount).toString(),
-    }
-    const result = await submitTicket(requestData)
-    const ok = result?.status === 200 || result?.status === 201 || result?.statusText === 'OK'
-    if (ok) {
+    const result = await submitTicket({
+      // Required fields
+      ticketId:         displayId.toString(),           // display ID shown to user
+      eventId:          event._id,
+      ticketType:       ticket.ticketType,
+      amount:           ticket.amount.toString(),        // per-ticket price as string
+      name:             formData.name,
+      phone:            formData.phone,
+      numberOfTicket:   Number(ticket.numberOfTicket),
+      // Optional but important
+      email:            formData.email,
+      amountPaid:       Number(ticket.numberOfTicket) * Number(ticket.amount), // total as Number
+      imageUrl:         ticket.imageUrl,
+      ticketDatabaseId: ticket._id,                     // tier MongoDB _id — increments purchased count
+      parentTicket:     displayId.toString(),
+    })
+
+    const saved = result?.data?.data
+    if ((result?.status === 200 || result?.status === 201) && saved?._id) {
+      setMongoTicketId(saved._id)   // MongoDB doc ID — used for invoice URL
       setSuccessModal(true)
     } else {
-      toast.error(`Ticket could not be saved. Quote ref ${tx_ref} when contacting support.`)
+      const msg = result?.data?.message || `Could not save ticket (${result?.status})`
+      throw new Error(msg)
     }
   }
 
   const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
     try {
-      const res = await verifyPaystackPayment(transaction.reference)
-      const data = res?.data
-      const SUCCESS_CODES = ['10', '11', '00']
-      const verified =
-        data?.status === true ||
-        data?.status === 'success' ||
-        SUCCESS_CODES.includes(data?.ResponseCode) ||
-        SUCCESS_CODES.includes(data?.data?.ResponseCode)
+      const ref = transaction.reference
 
-      if (verified) {
-        await submitVoteToDB(transaction.reference, transaction.transaction || transaction.reference)
-      } else if (data?.status === 'pending' || data?.data?.status === 'pending') {
-        toast.info('Payment is being processed. Your ticket will be sent to your email once confirmed.')
-        setSuccessModal(true)
-      } else {
-        toast.error(`Payment could not be confirmed. Quote ref ${transaction.reference} when contacting support.`)
+      // Verify with backend
+      let verifyData
+      try {
+        const res = await verifyPaystackPayment(ref)
+        verifyData = res?.data
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Verification failed'
+        toast.error(`Could not verify payment: ${msg}`)
+        return
       }
-    } catch (err) {
-      toast.error(err?.message || err?.response?.data?.message || 'Error verifying payment')
+
+      // Spec: { status: "success" | "failed" | "error", message, data: {...} }
+      const status = verifyData?.status
+
+      if (status === 'pending') {
+        toast.info('Payment is processing. Your ticket will be emailed once confirmed.')
+        setSuccessModal(true)
+        return
+      }
+
+      if (status !== 'success') {
+        const reason = verifyData?.message || 'Payment not confirmed'
+        toast.error(`${reason}. Quote ref ${ref} when contacting support.`)
+        return
+      }
+
+      // Save ticket
+      try {
+        await saveTicket()
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Could not save ticket'
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const initiatePayment = (ref, amount) => {
+    if (!appConfig.paystackPublicKey) {
+      toast.error('Payment is not configured. Please contact support.')
+      return
+    }
+    const nameParts = formData.name.trim().split(/\s+/)
     try {
       const popup = new PaystackPop()
       popup.newTransaction({
@@ -243,20 +261,23 @@ const Ticket = () => {
         amount,
         ref,
         currency: 'NGN',
-        firstname: formData.name,
+        firstname: nameParts[0],
+        lastname: nameParts.slice(1).join(' ') || undefined,
         phone: formData.phone,
+        label: `${ticket?.ticketType || 'Ticket'} × ${ticket?.numberOfTicket || 1}`,
         channels: ['card', 'ussd', 'bank_transfer', 'bank'],
         metadata: {
           custom_fields: [
-            { display_name: 'Phone', variable_name: 'phone', value: formData.phone },
-            { display_name: 'Ticket Type', variable_name: 'ticket_type', value: ticket?.ticketType || '' },
-            { display_name: 'Quantity', variable_name: 'quantity', value: String(ticket?.numberOfTicket || 1) },
+            { display_name: 'Event ID',     variable_name: 'event_id',    value: id },
+            { display_name: 'Ticket Type',  variable_name: 'ticket_type', value: ticket?.ticketType || '' },
+            { display_name: 'Quantity',     variable_name: 'quantity',    value: String(ticket?.numberOfTicket || 1) },
+            { display_name: 'Phone',        variable_name: 'phone',       value: formData.phone },
           ],
         },
-        onSuccess: (transaction) => handlePaystackSuccess(transaction),
+        onSuccess: handlePaystackSuccess,
         onCancel: () => toast.info('Payment cancelled'),
       })
-    } catch (err) {
+    } catch {
       toast.error('Could not open payment. Please refresh and try again.')
     }
   }
@@ -267,22 +288,28 @@ const Ticket = () => {
       toast.error('Please select a ticket type first.')
       return
     }
-    const amount = Math.round(Number(ticket.numberOfTicket) * Number(ticket.amount) * 100)
-    if (!amount || isNaN(amount) || amount <= 0) {
-      toast.error('Invalid ticket amount. Please try again.')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error('Please enter a valid email address.')
       return
     }
-    const ref = Date.now().toString()
-    setTrxRef(ref)
-    setModal(false) // close form before Paystack opens (avoids z-index conflict)
-    initiatePayment(ref, amount)
+    if (formData.phone.replace(/\D/g, '').length < 10) {
+      toast.error('Please enter a valid phone number.')
+      return
+    }
+    const amount = Math.round(Number(ticket.numberOfTicket) * Number(ticket.amount) * 100)
+    if (!amount || isNaN(amount) || amount <= 0) {
+      toast.error('Invalid ticket amount.')
+      return
+    }
+    setModal(false)
+    initiatePayment(Date.now().toString(), amount)
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
       {modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />}
-      {successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} eventId={id} event={event} />}
+      {successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} mongoId={mongoTicketId} eventId={id} event={event} />}
 
       {/* ── Hero ── */}
       <section className="relative min-h-[55vh] sm:min-h-[62vh] flex flex-col justify-end overflow-hidden">
@@ -437,7 +464,7 @@ const Ticket = () => {
                     className="animate-[ticketEnter_0.5s_cubic-bezier(0.16,1,0.3,1)_both]"
                     style={{ animationDelay: `${i * 80}ms` }}
                   >
-                    <TicketCard data={data} handleClick={handleClick} />
+                    <TicketCard data={data} handleClick={() => setModal(true)} />
                   </div>
                 ))}
               </div>
