@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@paystack/inline-js':
+        specifier: ^2.22.9
+        version: 2.22.9
       '@tanstack/react-query':
         specifier: ^4.24.10
         version: 4.44.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -23,9 +26,6 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
-      react-interswitch:
-        specifier: ^1.0.8
-        version: 1.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.8.2
         version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -131,10 +131,6 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
-
-  '@babel/runtime@7.29.7':
-    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
-    engines: {node: '>=6.9.0'}
 
   '@babel/template@7.29.7':
     resolution: {integrity: sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==}
@@ -308,6 +304,10 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@paystack/inline-js@2.22.9':
+    resolution: {integrity: sha512-X6kbt1exKDua1DL0iFuTSWy7l3oZ3SRdIhNwCW0cFCQ/NPk6fXypV2wXL8DBurEKqjda1WU+i0szUY/+av6EJA==}
+    engines: {node: '>= 22.0.0'}
+
   '@remix-run/router@1.23.2':
     resolution: {integrity: sha512-Ic6m2U/rMjTkhERIa/0ZtXJP17QUi2CbWE7cqx4J58M8aA3QTfW+2UlQ4psvTX9IO1RfNVhK3pcpdjej7L+t2w==}
     engines: {node: '>=14.0.0'}
@@ -327,18 +327,6 @@ packages:
       react-native:
         optional: true
 
-  '@testing-library/react-hooks@5.1.3':
-    resolution: {integrity: sha512-UdEUtlQapQ579NEcXDAUE275u+KUsPtxW7NmFrNt0bE6lW8lqNCyxDK0RSuECmNZ/S0/fgP00W9RWRhVKO/hRg==}
-    peerDependencies:
-      react: '>=16.9.0'
-      react-dom: '>=16.9.0'
-      react-test-renderer: '>=16.9.0'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-      react-test-renderer:
-        optional: true
-
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
@@ -346,9 +334,6 @@ packages:
     resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
     peerDependencies:
       '@types/react': ^18.0.0
-
-  '@types/react-test-renderer@19.1.0':
-    resolution: {integrity: sha512-XD0WZrHqjNrxA/MaR9O22w/RNidWR9YZmBdRGI7wcnWGrv/3dA8wKCJ8m63Sn+tLJhcjmuhOi629N66W6kgWzQ==}
 
   '@types/react@18.3.29':
     resolution: {integrity: sha512-ch0qJdr2JY0r04NXSprbK6TXOgnaJ1Tz23fm5W+z0/CBah6BSBc3n96h7K9GOtwh0HrilNWHIBzE1Ko4Dcw/Wg==}
@@ -537,10 +522,6 @@ packages:
 
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
-    engines: {node: '>=8'}
-
-  filter-console@0.1.1:
-    resolution: {integrity: sha512-zrXoV1Uaz52DqPs+qEwNJWJFAWZpYJ47UNmpN9q4j+/EYsz85uV0DC9k8tRND5kYmoVzL0W+Y75q4Rg8sRJCdg==}
     engines: {node: '>=8'}
 
   follow-redirects@1.16.0:
@@ -793,18 +774,6 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
-  react-error-boundary@3.1.4:
-    resolution: {integrity: sha512-uM9uPzZJTF6wRQORmSrvOIgt4lJ9MC1sNgEOj2XGsDTRE4kmpWxg7ENK9EWNKJRMAOY9z0MuF4yIfl6gp4sotA==}
-    engines: {node: '>=10', npm: '>=6'}
-    peerDependencies:
-      react: '>=16.13.1'
-
-  react-interswitch@1.0.8:
-    resolution: {integrity: sha512-jzheAW6kVMzO25o3S6TZQx6w49TVcB+gMN8R3Zio106BChZqO2aNCgu2tjmcuihY5kqXWYWb43gDJgV+kQyKhA==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: ^16.0.0
-
   react-refresh@0.14.2:
     resolution: {integrity: sha512-jCvmsr+1IUSMUyzOkRcvnVbX3ZYC6g9TDrDbFuFmRDq7PD4yaGbLKNQL6k2jnArV8hjYxh7hVhAZB6s9HDGpZA==}
     engines: {node: '>=0.10.0'}
@@ -1040,8 +1009,6 @@ snapshots:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
 
-  '@babel/runtime@7.29.7': {}
-
   '@babel/template@7.29.7':
     dependencies:
       '@babel/code-frame': 7.29.7
@@ -1162,6 +1129,8 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
+  '@paystack/inline-js@2.22.9': {}
+
   '@remix-run/router@1.23.2': {}
 
   '@tanstack/query-core@4.44.0': {}
@@ -1174,25 +1143,9 @@ snapshots:
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
 
-  '@testing-library/react-hooks@5.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@babel/runtime': 7.29.7
-      '@types/react': 18.3.29
-      '@types/react-dom': 18.3.7(@types/react@18.3.29)
-      '@types/react-test-renderer': 19.1.0
-      filter-console: 0.1.1
-      react: 18.3.1
-      react-error-boundary: 3.1.4(react@18.3.1)
-    optionalDependencies:
-      react-dom: 18.3.1(react@18.3.1)
-
   '@types/prop-types@15.7.15': {}
 
   '@types/react-dom@18.3.7(@types/react@18.3.29)':
-    dependencies:
-      '@types/react': 18.3.29
-
-  '@types/react-test-renderer@19.1.0':
     dependencies:
       '@types/react': 18.3.29
 
@@ -1414,8 +1367,6 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  filter-console@0.1.1: {}
-
   follow-redirects@1.16.0: {}
 
   form-data@4.0.5:
@@ -1613,19 +1564,6 @@ snapshots:
       loose-envify: 1.4.0
       react: 18.3.1
       scheduler: 0.23.2
-
-  react-error-boundary@3.1.4(react@18.3.1):
-    dependencies:
-      '@babel/runtime': 7.29.7
-      react: 18.3.1
-
-  react-interswitch@1.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      '@testing-library/react-hooks': 5.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react: 18.3.1
-    transitivePeerDependencies:
-      - react-dom
-      - react-test-renderer
 
   react-refresh@0.14.2: {}
 

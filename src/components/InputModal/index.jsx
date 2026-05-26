@@ -94,6 +94,16 @@ const InputModal = ({ setModal, handleSubmit, setFormData, formData }) => {
                 </svg>
                 SSL Encrypted · Secured by i-Sabi
               </p>
+
+              {/* PIN / OTP hint */}
+              <div className="flex gap-2.5 p-3 rounded-xl bg-[#22c55e]/[0.06] border border-[#22c55e]/20">
+                <svg className="w-4 h-4 text-[#22c55e] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-[10px] text-white/40 leading-relaxed">
+                  On the next screen, you will be asked for your <span className="text-[#22c55e] font-bold">card PIN</span> (your 4-digit ATM PIN — not an SMS code), then an <span className="text-[#22c55e] font-bold">OTP</span> sent to your bank-registered number.
+                </p>
+              </div>
             </div>
           </form>
         </div>

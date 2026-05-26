@@ -30,8 +30,6 @@ export const TicketContextProvider = ({children}) => {
     //     }
     // }, [dispatch])
     
-    console.log("State: ", state)
-    
     return (
         <TicketContext.Provider value={{...state, dispatch}}>
             { children }

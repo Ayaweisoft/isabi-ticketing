@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react'
+import PaystackPop from '@paystack/inline-js'
 import { useQuery } from '@tanstack/react-query'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -11,6 +12,7 @@ import SuccessModal from '../../components/SuccessModal'
 import { TicketContext } from '../../contexts/TicketContext'
 import appConfig from '../../configs/app.config'
 import generateTicketId from '../../utils/generateTicketId'
+import { buildEventOgImage } from '../../utils/buildOgImage'
 import GentleLoader from '../../components/GentleLoader'
 import { toast } from 'react-toastify'
 import { useSEO } from '../../hooks/useSEO'
@@ -160,11 +162,14 @@ const Ticket = () => {
     return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
   }, [date, event])
 
+  // Build enriched OG image: event photo + name, date, price range, i-Sabi watermark
+  const ogImage = buildEventOgImage(event, ticketList)
+
   // Dynamic SEO — uses event image for social sharing
   useSEO({
     title: event?.eventName,
     description: event?.aboutEvent || `Get tickets for ${event?.eventName}${event?.venue ? ` at ${event.venue}` : ''}. Secure your spot on i-Sabi.`,
-    image: event?.image_url,
+    image: ogImage,
     type: 'event',
   })
 
@@ -202,11 +207,11 @@ const Ticket = () => {
     }
   }
 
-  const handlePaystackSuccess = async (response) => {
+  const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
     try {
       const verifyData = await verifyPayment({
-        reference: response.reference,
+        reference: transaction.reference,
         amount: (Number(ticket?.amount) * Number(ticket?.numberOfTicket) * 100).toString(),
       })
       // Handle both flat and nested Paystack verify response shapes
@@ -215,9 +220,13 @@ const Ticket = () => {
         verifyData?.data?.data?.status ||
         (verifyData?.status === 200 ? 'success' : null)
       if (status === 'success') {
-        await submitVoteToDB(response.reference, response.transaction || response.reference)
+        await submitVoteToDB(transaction.reference, transaction.transaction || transaction.reference)
+      } else if (status === 'pending') {
+        // Async channels (bank_transfer) — payment initiated but not yet confirmed
+        toast.info('Payment is being processed. Your ticket will be sent to your email once confirmed.')
+        setSuccessModal(true)
       } else {
-        toast.error(`Payment verified but status is "${status}". Contact support with ref: ${response.reference}`)
+        toast.error(`Payment could not be confirmed. Quote ref ${transaction.reference} when contacting support.`)
       }
     } catch (err) {
       toast.error(err?.message || err?.response?.data?.message || 'Error verifying payment')
@@ -227,16 +236,9 @@ const Ticket = () => {
   }
 
   const initiatePayment = (ref, amount) => {
-    if (!window.PaystackPop) {
-      toast.error('Payment system not ready. Please refresh the page and try again.')
-      return
-    }
     try {
-      // Paystack v1 requires a plain sync function for callback — wrap async handler
-      const paymentCallback = function(response) {
-        handlePaystackSuccess(response)
-      }
-      const handler = window.PaystackPop.setup({
+      const popup = new PaystackPop()
+      popup.newTransaction({
         key: appConfig.paystackPublicKey,
         email: formData.email,
         amount,
@@ -252,12 +254,11 @@ const Ticket = () => {
             { display_name: 'Quantity', variable_name: 'quantity', value: String(ticket?.numberOfTicket || 1) },
           ],
         },
-        callback: paymentCallback,
-        onClose: () => toast.info('Payment window closed'),
+        onSuccess: (transaction) => handlePaystackSuccess(transaction),
+        onCancel: () => toast.info('Payment cancelled'),
       })
-      handler.openIframe()
     } catch (err) {
-      console.error('Paystack setup error:', err)
+      console.error('Paystack error:', err)
       toast.error('Could not open payment. Please refresh and try again.')
     }
   }
