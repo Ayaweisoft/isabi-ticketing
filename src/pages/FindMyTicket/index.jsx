@@ -11,7 +11,7 @@ import { DotGrid, TicketOutline, Sparkle } from '../../components/Decor'
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const TicketResult = ({ data, eventId }) => {
-  const raw = data?.tickets ?? data
+  const raw = data?.ticketList ?? data?.tickets ?? data
   const tickets = Array.isArray(raw) ? raw : (raw ? [raw] : [])
 
   if (!tickets.length) {
@@ -65,7 +65,7 @@ const TicketResult = ({ data, eventId }) => {
                 <div className="bg-white/[0.03] rounded-lg p-2.5">
                   <p className="text-white/30 mb-1">Status</p>
                   <span className={`font-bold capitalize ${
-                    ticket.status === 'active' || ticket.status === 'valid'
+                    ['active', 'valid', 'ACTIVE', 'VALID'].includes(ticket.status)
                       ? 'text-[#22c55e]'
                       : 'text-yellow-400'
                   }`}>{ticket.status}</span>
@@ -76,7 +76,7 @@ const TicketResult = ({ data, eventId }) => {
             {/* Invoice link */}
             {(ticket._id || ticket.ticketId) && (
               <Link
-                to={`/invoice/${ticket._id || ticket.ticketId}`}
+                to={`/invoice/${ticket._id || ticket.ticketId}${id ? `?eid=${id}` : ''}`}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold text-xs text-white
                   bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d]
                   shadow-lg shadow-green-500/15 transition-all duration-200 active:scale-[0.99]"
@@ -106,7 +106,7 @@ const FindMyTicket = () => {
     queryFn: () => getData(fetchTicketDetails, id),
   })
 
-  const { isLoading, error, data: ticketData } = useQuery({
+  const { isFetching, error, data: ticketData } = useQuery({
     queryKey: ['findMyTicket', id, submittedEmail],
     queryFn: () => getData(findMyTicket, { eventId: id, email: submittedEmail }),
     enabled: enableFetch && !!submittedEmail,
@@ -171,7 +171,7 @@ const FindMyTicket = () => {
 
               <button
                 type="submit"
-                disabled={isLoading || !email.trim()}
+                disabled={isFetching || !email.trim()}
                 className="w-full py-3 rounded-xl font-bold text-white text-sm
                   bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d]
                   shadow-lg shadow-green-500/20 hover:shadow-green-500/30
@@ -179,7 +179,7 @@ const FindMyTicket = () => {
                   flex items-center justify-center gap-2
                   disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {isFetching ? (
                   <>
                     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -209,7 +209,7 @@ const FindMyTicket = () => {
           </div>
 
           {/* Results */}
-          {!isLoading && !error && ticketData && (
+          {!isFetching && !error && ticketData && (
             <TicketResult data={ticketData} eventId={id} />
           )}
         </div>

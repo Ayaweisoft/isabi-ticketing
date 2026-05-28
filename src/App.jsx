@@ -11,7 +11,7 @@ import About from './pages/About'
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <main className="App">
         <ScrollToTop>
           <Routes>

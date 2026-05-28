@@ -21,8 +21,8 @@ const CheckTicket = () => {
     queryFn: () => getData(fetchTicketDetails, id),
   })
 
-  const { isLoading: loading, error: err, data: ticketData } = useQuery({
-    queryKey: ['checkTicketData', submittedId],
+  const { isFetching: loading, error: err, data: ticketData } = useQuery({
+    queryKey: ['checkTicketData', id, submittedId],
     queryFn: () => getData(checkTicket, { ticketId: submittedId, eventId: id }),
     refetchOnWindowFocus: false,
     retry: false,
