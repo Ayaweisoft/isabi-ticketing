@@ -137,7 +137,7 @@ const Ticket = () => {
   const { ticket } = useContext(TicketContext)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' })
 
-  const { isLoading: eventLoading, data: eventInfo } = useQuery({
+  const { isLoading: eventLoading, error: eventError, data: eventInfo } = useQuery({
     queryKey: ['eventById', id],
     queryFn: () => getData(fetchEventById, id),
     enabled: !!id,
@@ -152,6 +152,7 @@ const Ticket = () => {
   const event = eventInfo?.eventData || eventInfo?.event || ticketData?.event
   const ticketList = ticketData?.ticketList || ticketData?.tickets || (Array.isArray(ticketData) ? ticketData : [])
   const isLoading = eventLoading || ticketLoading
+  const error = eventError
 
   const date = useMemo(() => new Date(event?.startDate), [event?.startDate])
   const countdown = useCountdown(date)
@@ -173,30 +174,70 @@ const Ticket = () => {
     type: 'event',
   })
 
-  const saveTicket = async () => {
+  // On mount: check localStorage for a pending ticket (payment succeeded but save failed)
+  useEffect(() => {
+    if (!id) return
+    const stored = localStorage.getItem(`pendingTicket_${id}`)
+    if (!stored) return
+    let pending
+    try { pending = JSON.parse(stored) } catch { return }
+
+    // Expire after 24 hours
+    if (Date.now() - (pending.savedAt || 0) > 86400000) {
+      localStorage.removeItem(`pendingTicket_${id}`)
+      return
+    }
+
+    toast.info(`Incomplete purchase detected. Attempting recovery...`, { toastId: 'recover', autoClose: 6000 })
+    setLoading(true)
+    submitTicket(pending)
+      .then(result => {
+        const saved = result?.data?.data
+        if ((result?.status === 200 || result?.status === 201) && saved?._id) {
+          localStorage.removeItem(`pendingTicket_${id}`)
+          setTicketId(pending.ticketId)
+          setMongoTicketId(saved._id)
+          setSuccessModal(true)
+          toast.dismiss('recover')
+        }
+      })
+      .catch(err => {
+        const msg = err?.response?.data?.message || err?.message || 'Recovery failed'
+        toast.error(`Could not recover ticket: ${msg}. Quote ref ${pending.ref} when contacting support.`, { autoClose: false })
+      })
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const saveTicket = async (ref) => {
     const displayId = await generateTicketId(6, id)  // e.g. "A1B2C3"
     setTicketId(displayId.toString())
 
-    const result = await submitTicket({
-      // Required fields
-      ticketId:         displayId.toString(),           // display ID shown to user
+    const payload = {
+      ticketId:         displayId.toString(),
       eventId:          event._id,
       ticketType:       ticket.ticketType,
-      amount:           ticket.amount.toString(),        // per-ticket price as string
+      amount:           ticket.amount.toString(),
       name:             formData.name,
       phone:            formData.phone,
       numberOfTicket:   Number(ticket.numberOfTicket),
-      // Optional but important
       email:            formData.email,
-      amountPaid:       Number(ticket.numberOfTicket) * Number(ticket.amount), // total as Number
+      amountPaid:       Number(ticket.numberOfTicket) * Number(ticket.amount),
       imageUrl:         ticket.imageUrl,
-      ticketDatabaseId: ticket._id,                     // tier MongoDB _id — increments purchased count
+      ticketDatabaseId: ticket._id,
       parentTicket:     displayId.toString(),
-    })
+      ref,
+    }
+
+    // Persist before network call — cleared on success, survives page reload if save fails
+    localStorage.setItem(`pendingTicket_${id}`, JSON.stringify({ ...payload, savedAt: Date.now() }))
+
+    const result = await submitTicket(payload)
 
     const saved = result?.data?.data
     if ((result?.status === 200 || result?.status === 201) && saved?._id) {
-      setMongoTicketId(saved._id)   // MongoDB doc ID — used for invoice URL
+      localStorage.removeItem(`pendingTicket_${id}`)
+      localStorage.removeItem(`pendingRef_${id}`)
+      setMongoTicketId(saved._id)
       setSuccessModal(true)
     } else {
       const msg = result?.data?.message || `Could not save ticket (${result?.status})`
@@ -206,38 +247,59 @@ const Ticket = () => {
 
   const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
-    try {
-      const ref = transaction.reference
+    const ref = transaction.reference
 
+    // Store ref immediately — customer is debited from this point.
+    // Cleared only after the ticket is successfully saved.
+    localStorage.setItem(`pendingRef_${id}`, JSON.stringify({ ref, savedAt: Date.now() }))
+
+    try {
       // Verify with backend
       let verifyData
       try {
         const res = await verifyPaystackPayment(ref)
         verifyData = res?.data
+        console.log('[verify response]', verifyData)
       } catch (err) {
+        const httpStatus = err?.response?.status
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Verification failed'
-        toast.error(`Could not verify payment: ${msg}`)
+        if (httpStatus >= 500) {
+          toast.error(
+            `Payment received but our server could not verify it. Your reference is ${ref} — please contact support and we will confirm your ticket.`,
+            { autoClose: false }
+          )
+        } else {
+          toast.error(`Could not verify payment: ${msg}`)
+        }
         return
       }
 
-      // Spec: { status: "success" | "failed" | "error", message, data: {...} }
-      const status = verifyData?.status
+      // Backend may return status as "success" (string), true (boolean),
+      // or nest it under verifyData.data — handle all shapes
+      const rawStatus = verifyData?.status ?? verifyData?.data?.status
+      const isVerified =
+        rawStatus === 'success' ||
+        rawStatus === true ||
+        rawStatus === 'SUCCESS' ||
+        verifyData?.message?.toLowerCase()?.includes('success')
 
-      if (status === 'pending') {
+      const isPending = rawStatus === 'pending' || rawStatus === 'processing'
+
+      if (isPending) {
         toast.info('Payment is processing. Your ticket will be emailed once confirmed.')
         setSuccessModal(true)
         return
       }
 
-      if (status !== 'success') {
-        const reason = verifyData?.message || 'Payment not confirmed'
+      if (!isVerified) {
+        const reason = verifyData?.message || verifyData?.data?.message || 'Payment not confirmed'
         toast.error(`${reason}. Quote ref ${ref} when contacting support.`)
         return
       }
 
       // Save ticket
       try {
-        await saveTicket()
+        await saveTicket(ref)
       } catch (err) {
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Could not save ticket'
         toast.error(msg)

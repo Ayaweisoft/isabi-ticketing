@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import getData from '../../utils/getData'
 import { fetchTicketDetails, checkTicket } from '../../adapters/CommonAdapter'
 import Footer from '../../components/Footer'
@@ -12,17 +12,28 @@ import { DotGrid, QRPattern, TicketOutline } from '../../components/Decor'
 const CheckTicket = () => {
   useSEO({ title: 'Verify Ticket', description: 'Verify the authenticity of your event ticket on i-Sabi.' })
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const [input, setInput] = useState('')
   const [submittedId, setSubmittedId] = useState('')
   const [enableFetch, setEnableFetch] = useState(false)
+
+  // Auto-verify when QR code scan passes ?t=ticketNumber in the URL
+  useEffect(() => {
+    const t = searchParams.get('t')
+    if (t) {
+      setInput(t)
+      setSubmittedId(t)
+      setEnableFetch(true)
+    }
+  }, [searchParams])
 
   const { data: eventData } = useQuery({
     queryKey: ['eventData', id],
     queryFn: () => getData(fetchTicketDetails, id),
   })
 
-  const { isLoading: loading, error: err, data: ticketData } = useQuery({
-    queryKey: ['checkTicketData', submittedId],
+  const { isFetching: loading, error: err, data: ticketData } = useQuery({
+    queryKey: ['checkTicketData', id, submittedId],
     queryFn: () => getData(checkTicket, { ticketId: submittedId, eventId: id }),
     refetchOnWindowFocus: false,
     retry: false,
