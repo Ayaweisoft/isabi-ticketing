@@ -46,18 +46,10 @@ const TicketData = ({ data }) => {
       const invoice = res?.data?.invoice || res?.data?.data || res?.data
       const qrSrc = invoice?.qrCode || invoice?.qr_code || invoice?.qrcode
 
-      // Fetch event image from event data using the eventId on the ticket
-      let eventImageUrl = ''
-      const eventId = data?.eventId
-      if (eventId) {
-        try {
-          const evRes = await fetchEventById(eventId)
-          const evData = evRes?.data?.eventData || evRes?.data?.event || evRes?.data
-          eventImageUrl = evData?.image_url || evData?.imageUrl || ''
-        } catch { /* non-fatal — draw without image */ }
-      }
+      // Invoice now includes eventImage directly; fall back to separately-fetched image
+      const finalEventImage = invoice?.eventImage || invoice?.image_url || invoice?.imageUrl || eventImage
 
-      await drawTicketPass(invoice, qrSrc, mongoId, eventImageUrl || eventImage)
+      await drawTicketPass(invoice, qrSrc, mongoId, finalEventImage)
     } catch (err) {
       setDlError(err?.response?.data?.error || err?.message || 'Download failed')
     } finally {

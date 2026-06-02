@@ -24,27 +24,19 @@ const Invoice = () => {
   const invoice = data?.invoice || data?.data || data
   const qrSrc = invoice?.qrCode || invoice?.qr_code || invoice?.qrcode
 
-  // eventId: prefer URL query param (?eid=), fall back to whatever backend includes
-  const eventId = eidFromUrl || invoice?.eventId
+  // eventImage now comes directly from invoice; fall back to a separate fetch only if absent
+  const invoiceEventImage = invoice?.eventImage || invoice?.image_url || invoice?.imageUrl || ''
+  const eventId = invoice?.eventId || eidFromUrl
   const { data: eventData } = useQuery({
     queryKey: ['eventForInvoice', eventId],
     queryFn: () => getData(fetchEventById, eventId),
-    enabled: !!eventId,
+    enabled: !!eventId && !invoiceEventImage,
   })
-  const eventImage = eventData?.eventData?.image_url || eventData?.event?.image_url || ''
+  const eventImage = invoiceEventImage || eventData?.eventData?.image_url || eventData?.event?.image_url || ''
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!invoice) return
-    let eventImageUrl = ''
-    const eventId = invoice?.eventId
-    if (eventId) {
-      try {
-        const evRes = await fetchEventById(eventId)
-        const evData = evRes?.data?.eventData || evRes?.data?.event || evRes?.data
-        eventImageUrl = evData?.image_url || evData?.imageUrl || ''
-      } catch { /* non-fatal */ }
-    }
-    drawTicketPass(invoice, qrSrc, ticketId, eventImageUrl || eventImage)
+    drawTicketPass(invoice, qrSrc, ticketId, eventImage)
   }
 
   const displayName  = invoice?.buyer     || invoice?.name     || '—'
