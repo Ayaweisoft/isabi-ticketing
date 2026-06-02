@@ -14,7 +14,7 @@ ENV VITE_PAYSTACK_PUBLIC_KEY=$VITE_PAYSTACK_PUBLIC_KEY
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile
+RUN corepack enable && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile
 
 # Copy source code (.dockerignore excludes node_modules, .git, .env.development)
 COPY . .
