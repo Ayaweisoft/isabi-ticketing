@@ -74,3 +74,14 @@ export const fetchTicketInvoice = (ticketId) => {
         method: "get"
     })
 }
+
+// POST /v2/reconciliation/recover
+// User self-service: supply ref + service to trigger the recovery engine.
+// Used when payment succeeded but the ticket was never saved (e.g. network drop).
+export const recoverPayment = ({ ref, service, email, metadata = {} }) => {
+    return ApiAdapter.fetchData({
+        url: "v2/reconciliation/recover",
+        method: "post",
+        data: { ref, service, email, metadata }
+    })
+}
