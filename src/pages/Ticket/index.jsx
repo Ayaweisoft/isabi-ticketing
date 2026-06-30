@@ -5,7 +5,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { useParams, Link } from 'react-router-dom'
 import getData from '../../utils/getData'
-import { fetchEventById, fetchTicketDetails, verifyPaystackPayment, submitTicket } from '../../adapters/CommonAdapter'
+import { fetchEventById, fetchTicketDetails, verifyPaystackPayment, submitTicket, recoverPayment } from '../../adapters/CommonAdapter'
 import TicketCard from '../../components/TicketCard'
 import InputModal from '../../components/InputModal'
 import SuccessModal from '../../components/SuccessModal'
@@ -174,70 +174,262 @@ const Ticket = () => {
     type: 'event',
   })
 
-  // On mount: check localStorage for a pending ticket (payment succeeded but save failed)
-  useEffect(() => {
-    if (!id) return
+  const clearPendingPurchase = () => {
+    localStorage.removeItem(`pendingTicket_${id}`)
+    localStorage.removeItem(`pendingDisplayId_${id}`)
+    localStorage.removeItem(`pendingRef_${id}`)
+  }
+
+  const getPendingPurchase = () => {
     const stored = localStorage.getItem(`pendingTicket_${id}`)
-    if (!stored) return
-    let pending
-    try { pending = JSON.parse(stored) } catch { return }
-
-    // Expire after 24 hours
-    if (Date.now() - (pending.savedAt || 0) > 86400000) {
-      localStorage.removeItem(`pendingTicket_${id}`)
-      return
+    if (!stored) return null
+    try {
+      return JSON.parse(stored)
+    } catch {
+      clearPendingPurchase()
+      return null
     }
+  }
 
-    toast.info(`Incomplete purchase detected. Attempting recovery...`, { toastId: 'recover', autoClose: 6000 })
-    setLoading(true)
-    submitTicket(pending)
-      .then(result => {
-        const saved = result?.data?.data
-        if ((result?.status === 200 || result?.status === 201) && saved?._id) {
-          localStorage.removeItem(`pendingTicket_${id}`)
-          setTicketId(pending.ticketId)
-          setMongoTicketId(saved._id)
-          setSuccessModal(true)
-          toast.dismiss('recover')
-        }
-      })
-      .catch(err => {
-        const msg = err?.response?.data?.message || err?.message || 'Recovery failed'
-        toast.error(`Could not recover ticket: ${msg}. Quote ref ${pending.ref} when contacting support.`, { autoClose: false })
-      })
-      .finally(() => setLoading(false))
-  }, [id])
+  const clearInitializedPurchase = (ref) => {
+    const pending = getPendingPurchase()
+    if (pending?.ref === ref && pending?.paymentStatus === 'initialized') {
+      clearPendingPurchase()
+    }
+  }
 
-  const saveTicket = async (ref) => {
-    const displayId = await generateTicketId(6, id)  // e.g. "A1B2C3"
-    setTicketId(displayId.toString())
+  const buildTicketPayload = (ref, displayId) => {
+    const quantity = Number(ticket.numberOfTicket)
+    const amount = Number(ticket.amount)
 
-    const payload = {
+    return {
       ticketId:         displayId.toString(),
       eventId:          event._id,
       ticketType:       ticket.ticketType,
-      amount:           ticket.amount.toString(),
-      name:             formData.name,
+      amount:           amount.toString(),
+      name:             formData.name.trim(),
       phone:            formData.phone,
-      numberOfTicket:   Number(ticket.numberOfTicket),
-      email:            formData.email,
-      amountPaid:       Number(ticket.numberOfTicket) * Number(ticket.amount),
+      numberOfTicket:   quantity,
+      quantity,
+      email:            formData.email.trim(),
+      amountPaid:       quantity * amount,
       imageUrl:         ticket.imageUrl,
       ticketDatabaseId: ticket._id,
       parentTicket:     displayId.toString(),
       ref,
+      trax:             ref,
+      reference:        ref,
+      paystackReference: ref,
+    }
+  }
+
+  const getRecoveryMetadata = (payload) => ({
+    ticketId:         payload.ticketId,
+    eventId:          payload.eventId,
+    ticketType:       payload.ticketType,
+    amount:           payload.amount,
+    amountPaid:       payload.amountPaid,
+    name:             payload.name,
+    phone:            payload.phone,
+    numberOfTicket:   payload.numberOfTicket,
+    quantity:         payload.quantity,
+    ticketDatabaseId: payload.ticketDatabaseId,
+    parentTicket:     payload.parentTicket,
+  })
+
+  const persistPendingPurchase = (payload, paymentStatus = 'initialized') => {
+    localStorage.setItem(`pendingDisplayId_${id}`, payload.ticketId)
+    localStorage.setItem(`pendingRef_${id}`, JSON.stringify({ ref: payload.ref, savedAt: Date.now() }))
+    localStorage.setItem(
+      `pendingTicket_${id}`,
+      JSON.stringify({ ...payload, paymentStatus, savedAt: Date.now() })
+    )
+  }
+
+  const getSubmitPayload = (payload) => {
+    const { paymentStatus, savedAt, ...submitPayload } = payload
+    return submitPayload
+  }
+
+  const getSavedTicketId = (result) => (
+    result?.data?.data?._id ||
+    result?.data?.ticket?._id ||
+    result?.data?.entityId ||
+    result?.data?._id ||
+    ''
+  )
+
+  const isSuccessfulTicketSave = (result) => {
+    if (result?.status !== 200 && result?.status !== 201) return false
+    return Boolean(getSavedTicketId(result) || result?.data?.success === true || result?.data?.status === 'success')
+  }
+
+  const isSuccessfulRecovery = (recovery) => (
+    recovery?.data?.status === 'recovered' ||
+    recovery?.data?.status === 'success' ||
+    recovery?.data?.entityId ||
+    recovery?.data?.data?._id
+  )
+
+  const getRecoveredId = (recovery) => (
+    recovery?.data?.entityId ||
+    recovery?.data?.data?._id ||
+    recovery?.data?.ticket?._id ||
+    ''
+  )
+
+  const getVerificationState = (verifyData) => {
+    const transactionStatus = verifyData?.data?.status
+    if (transactionStatus != null) {
+      const status = `${transactionStatus}`.toLowerCase()
+      if (status === 'success') return 'success'
+      if (status === 'pending' || status === 'processing' || status === 'ongoing') return 'pending'
+      return 'failed'
     }
 
+    const rawStatus = verifyData?.status
+    const message = `${verifyData?.message || verifyData?.data?.message || ''}`.toLowerCase()
+    const status = `${rawStatus || ''}`.toLowerCase()
+
+    if (
+      rawStatus === true ||
+      status === 'success' ||
+      message === 'success' ||
+      message.includes('payment successful') ||
+      message.includes('transaction successful')
+    ) return 'success'
+    if (status === 'pending' || status === 'processing' || status === 'ongoing') return 'pending'
+    return 'failed'
+  }
+
+  const verifyPayment = async (ref) => {
+    const res = await verifyPaystackPayment(ref)
+    return res?.data
+  }
+
+  const recoverTicket = async (payload) => {
+    const recovery = await recoverPayment({
+      ref:      payload.ref,
+      service:  'ticket',
+      email:    payload.email,
+      metadata: getRecoveryMetadata(payload),
+    })
+
+    if (!isSuccessfulRecovery(recovery)) return false
+
+    clearPendingPurchase()
+    setTicketId(payload.ticketId)
+    setMongoTicketId(getRecoveredId(recovery))
+    setSuccessModal(true)
+    return true
+  }
+
+  // On mount: check localStorage for a pending ticket (payment succeeded but save failed)
+  useEffect(() => {
+    if (!id) return
+    let pending = getPendingPurchase()
+    if (!pending) return
+
+    // Expire after 48 hours
+    if (Date.now() - (pending.savedAt || 0) > 172800000) {
+      clearPendingPurchase()
+      return
+    }
+
+    toast.info('Incomplete purchase detected. Attempting recovery...', { toastId: 'recover', autoClose: 6000 })
+    setLoading(true)
+
+    const attemptRecovery = async () => {
+      let canSubmitTicket = !pending.paymentStatus || pending.paymentStatus === 'paid'
+
+      if (pending.ref && pending.paymentStatus !== 'paid') {
+        try {
+          const verifyData = await verifyPayment(pending.ref)
+          const verificationState = getVerificationState(verifyData)
+
+          if (verificationState === 'pending') {
+            toast.dismiss('recover')
+            toast.info('Payment is still processing. Your ticket will be completed once Paystack confirms it.')
+            return
+          }
+
+          if (verificationState !== 'success') {
+            if (pending.paymentStatus === 'initialized') {
+              clearPendingPurchase()
+            }
+            toast.dismiss('recover')
+            return
+          }
+
+          pending.paymentStatus = 'paid'
+          persistPendingPurchase(pending, 'paid')
+          canSubmitTicket = true
+        } catch (_) {
+          // If verification is unreachable, let the server-side recovery endpoint try the reference.
+          canSubmitTicket = false
+        }
+      }
+
+      // 1. Try submitTicket (idempotent — returns existing if ref already saved)
+      if (canSubmitTicket) {
+        try {
+          const result = await submitTicket(getSubmitPayload(pending))
+          if (isSuccessfulTicketSave(result)) {
+            clearPendingPurchase()
+            setTicketId(pending.ticketId)
+            setMongoTicketId(getSavedTicketId(result))
+            setSuccessModal(true)
+            toast.dismiss('recover')
+            return
+          }
+        } catch (_) { /* fall through to server recovery */ }
+      }
+
+      // 2. If submitTicket failed, hit the server recovery endpoint
+      if (pending.ref) {
+        try {
+          const recovered = await recoverTicket(pending)
+          if (recovered) {
+            toast.dismiss('recover')
+            return
+          }
+        } catch (_) { /* fall through to error message */ }
+      }
+
+      toast.dismiss('recover')
+      toast.error(
+        `Could not recover your ticket automatically. Quote ref ${pending.ref || 'unknown'} when contacting support at support@i-sabi.com.ng`,
+        { autoClose: false }
+      )
+    }
+
+    attemptRecovery().finally(() => setLoading(false))
+  }, [id])
+
+  const saveTicket = async (ref, displayId) => {
+    let payload = getPendingPurchase() || buildTicketPayload(ref, displayId)
+    payload = { ...payload, ref, trax: ref, reference: ref, paystackReference: ref, paymentStatus: 'paid' }
+
     // Persist before network call — cleared on success, survives page reload if save fails
-    localStorage.setItem(`pendingTicket_${id}`, JSON.stringify({ ...payload, savedAt: Date.now() }))
+    persistPendingPurchase(payload, 'paid')
+    setTicketId(payload.ticketId)
 
-    const result = await submitTicket(payload)
+    let result
+    try {
+      result = await submitTicket(getSubmitPayload(payload))
+    } catch (submitErr) {
+      // submitTicket failed — try server-side recovery before giving up
+      console.warn('[saveTicket] submitTicket failed, attempting server recovery:', submitErr.message)
+      const recovered = await recoverTicket(payload)
+      if (recovered) {
+        return
+      }
+      throw submitErr
+    }
 
-    const saved = result?.data?.data
-    if ((result?.status === 200 || result?.status === 201) && saved?._id) {
-      localStorage.removeItem(`pendingTicket_${id}`)
-      localStorage.removeItem(`pendingRef_${id}`)
-      setMongoTicketId(saved._id)
+    if (isSuccessfulTicketSave(result)) {
+      clearPendingPurchase()
+      setMongoTicketId(getSavedTicketId(result))
       setSuccessModal(true)
     } else {
       const msg = result?.data?.message || `Could not save ticket (${result?.status})`
@@ -247,20 +439,30 @@ const Ticket = () => {
 
   const handlePaystackSuccess = async (transaction) => {
     setLoading(true)
-    const ref = transaction.reference
+    const ref       = transaction?.reference || transaction?.trxref || transaction?.transaction
+    if (!ref) {
+      toast.error('Payment completed but Paystack did not return a reference. Please contact support.', { autoClose: false })
+      setLoading(false)
+      return
+    }
+    // Retrieve the display ID that was pre-generated before the Paystack popup opened
+    const displayId = localStorage.getItem(`pendingDisplayId_${id}`) || ref.slice(-6).toUpperCase()
 
     // Store ref immediately — customer is debited from this point.
     // Cleared only after the ticket is successfully saved.
-    localStorage.setItem(`pendingRef_${id}`, JSON.stringify({ ref, savedAt: Date.now() }))
+    const pendingPayload = getPendingPurchase() || buildTicketPayload(ref, displayId)
+    persistPendingPurchase({ ...pendingPayload, ref, trax: ref, reference: ref, paystackReference: ref }, 'verifying')
 
     try {
       // Verify with backend
       let verifyData
       try {
-        const res = await verifyPaystackPayment(ref)
-        verifyData = res?.data
+        verifyData = await verifyPayment(ref)
         console.log('[verify response]', verifyData)
       } catch (err) {
+        const recovered = await recoverTicket({ ...pendingPayload, ref })
+        if (recovered) return
+
         const httpStatus = err?.response?.status
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Verification failed'
         if (httpStatus >= 500) {
@@ -276,40 +478,34 @@ const Ticket = () => {
 
       // Backend may return status as "success" (string), true (boolean),
       // or nest it under verifyData.data — handle all shapes
-      const rawStatus = verifyData?.status ?? verifyData?.data?.status
-      const isVerified =
-        rawStatus === 'success' ||
-        rawStatus === true ||
-        rawStatus === 'SUCCESS' ||
-        verifyData?.message?.toLowerCase()?.includes('success')
+      const verificationState = getVerificationState(verifyData)
 
-      const isPending = rawStatus === 'pending' || rawStatus === 'processing'
-
-      if (isPending) {
+      if (verificationState === 'pending') {
         toast.info('Payment is processing. Your ticket will be emailed once confirmed.')
-        setSuccessModal(true)
         return
       }
 
-      if (!isVerified) {
+      if (verificationState !== 'success') {
         const reason = verifyData?.message || verifyData?.data?.message || 'Payment not confirmed'
         toast.error(`${reason}. Quote ref ${ref} when contacting support.`)
         return
       }
 
+      persistPendingPurchase({ ...pendingPayload, ref, trax: ref, reference: ref, paystackReference: ref }, 'paid')
+
       // Save ticket
       try {
-        await saveTicket(ref)
+        await saveTicket(ref, displayId)
       } catch (err) {
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Could not save ticket'
-        toast.error(msg)
+        toast.error(`${msg} — Quote ref ${ref} when contacting support.`, { autoClose: false })
       }
     } finally {
       setLoading(false)
     }
   }
 
-  const initiatePayment = (ref, amount) => {
+  const initiatePayment = (displayTicketId, ref, amount, payload) => {
     if (!appConfig.paystackPublicKey) {
       toast.error('Payment is not configured. Please contact support.')
       return
@@ -328,26 +524,48 @@ const Ticket = () => {
         phone: formData.phone,
         label: `${ticket?.ticketType || 'Ticket'} × ${ticket?.numberOfTicket || 1}`,
         channels: ['card', 'ussd', 'bank_transfer', 'bank'],
+        // Full metadata — the ticket webhook uses these to reconstruct the ticket
+        // if the frontend fails to call savePurchasedTicket after payment.
         metadata: {
+          event_id: id,
+          ticket_type: payload.ticketType,
+          quantity: payload.quantity,
+          phone: payload.phone,
+          ticket_display_id: payload.ticketId,
+          ticket_db_id: payload.ticketDatabaseId,
+          user_name: payload.name,
+          email: payload.email,
+          amount_paid: payload.amountPaid,
           custom_fields: [
-            { display_name: 'Event ID',     variable_name: 'event_id',    value: id },
-            { display_name: 'Ticket Type',  variable_name: 'ticket_type', value: ticket?.ticketType || '' },
-            { display_name: 'Quantity',     variable_name: 'quantity',    value: String(ticket?.numberOfTicket || 1) },
-            { display_name: 'Phone',        variable_name: 'phone',       value: formData.phone },
+            { display_name: 'Event ID',            variable_name: 'event_id',          value: id },
+            { display_name: 'Ticket Type',         variable_name: 'ticket_type',        value: payload.ticketType || '' },
+            { display_name: 'Quantity',            variable_name: 'quantity',           value: String(payload.quantity || 1) },
+            { display_name: 'Phone',               variable_name: 'phone',              value: payload.phone },
+            { display_name: 'Ticket Display ID',   variable_name: 'ticket_display_id',  value: displayTicketId },
+            { display_name: 'Ticket DB ID',        variable_name: 'ticket_db_id',       value: payload.ticketDatabaseId || '' },
+            { display_name: 'User Name',           variable_name: 'user_name',          value: payload.name },
           ],
         },
         onSuccess: handlePaystackSuccess,
-        onCancel: () => toast.info('Payment cancelled'),
+        onCancel: () => {
+          clearInitializedPurchase(ref)
+          toast.info('Payment cancelled')
+        },
       })
     } catch {
+      clearInitializedPurchase(ref)
       toast.error('Could not open payment. Please refresh and try again.')
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!ticket?._id) {
       toast.error('Please select a ticket type first.')
+      return
+    }
+    if (!event?._id) {
+      toast.error('Event details are still loading. Please try again in a moment.')
       return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -363,8 +581,14 @@ const Ticket = () => {
       toast.error('Invalid ticket amount.')
       return
     }
+    // Pre-generate the display ticket ID and store it before opening Paystack.
+    // This ensures the webhook can use the same ID if the frontend crashes mid-flow.
+    const displayId = (await generateTicketId(6, id)).toString()
+    const ref = Date.now().toString()
+    const payload = buildTicketPayload(ref, displayId)
+    persistPendingPurchase(payload, 'initialized')
     setModal(false)
-    initiatePayment(Date.now().toString(), amount)
+    initiatePayment(displayId, ref, amount, payload)
   }
 
   return (
