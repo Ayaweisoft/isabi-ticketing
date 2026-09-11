@@ -1,8 +1,10 @@
 'use strict'
 /**
  * Lightweight meta-tag server.
- * Nginx proxies every /ticket/:id request here and passes X-Is-Bot: 0|1.
- * - Bots  → return server-rendered HTML with correct og:image (event photo)
+ * Nginx proxies every /:eventId request here (see nginx.conf) and passes
+ * X-Is-Bot: 0|1.
+ * - Bots  → return server-rendered HTML with correct og:image (event photo
+ *           composited with the i-Sabi watermark, Instagram-style)
  * - Users → return the SPA index.html so React takes over
  */
 const http = require('http')
@@ -33,8 +35,13 @@ http.createServer(async (req, res) => {
 
   if (!isBot) return serveIndex(res)
 
-  // Extract event ID from URL path e.g. /ticket/abc123
-  const m = (req.url ?? '').match(/^\/ticket\/([^/?#]+)/)
+  // Extract event ID from the URL path — the real route (and the link sent
+  // to event owners in the approval email, see event_control.js in the
+  // server repo) is bare /:id, NOT /ticket/:id. This regex previously never
+  // matched a real shared link, so this whole dynamic branch was dead code
+  // in production — every actual share fell through to the generic
+  // static index.html below.
+  const m = (req.url ?? '').match(/^\/([a-f0-9]{24})(?:[/?#]|$)/i)
   if (!m) return serveIndex(res)
 
   const id = m[1]
@@ -48,8 +55,29 @@ http.createServer(async (req, res) => {
 
     const title = esc(ev.eventName ? `${ev.eventName} | i-Sabi` : 'i-Sabi | Buy Event Tickets in Nigeria')
     const desc  = esc(ev.aboutEvent ?? `Get tickets for ${ev.eventName ?? 'this event'} on i-Sabi — Nigeria's trusted event platform.`)
-    const img   = esc(ev.image_url  ?? `${SITE}/logo.png`)
-    const url   = esc(`${SITE}/ticket/${id}`)
+    const url   = esc(`${SITE}/${id}`)
+
+    // Composite the event's own cover photo with the i-Sabi watermark
+    // (Instagram-style: the real content, with small platform branding
+    // underneath) instead of showing the raw photo with no branding at all.
+    // Falls back to the plain event photo (or the generic logo) if the
+    // compositor is slow/unreachable — never let this block the preview.
+    let img = ev.image_url ?? `${SITE}/logo.png`
+    if (ev.image_url && /^https:\/\/res\.cloudinary\.com\//.test(ev.image_url)) {
+      try {
+        const ogRes = await fetch(
+          `${API}/og-image?source=${encodeURIComponent(ev.image_url)}&key=ticket_${id}`,
+          { signal: AbortSignal.timeout(6000) },
+        )
+        if (ogRes.ok) {
+          const ogData = await ogRes.json()
+          if (ogData.url) img = ogData.url
+        }
+      } catch (composeErr) {
+        console.error('meta-server: og-image compose failed for', id, composeErr.message)
+      }
+    }
+    img = esc(img)
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
     res.end(`<!DOCTYPE html>
