@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTicketContext } from '../../hooks/useTicketContext';
+import computeServiceFee from '../../utils/computeServiceFee';
 
 const BADGE_MAP = {
   vip: { label: 'VIP', cls: 'from-yellow-400 to-amber-500 text-black' },
@@ -50,6 +51,8 @@ const TicketCard = ({ data, handleClick }) => {
   };
 
   const total = numberOfTicket * (data.amount || 0);
+  const serviceFee = total > 0 ? computeServiceFee(total) : 0;
+  const grandTotal = total + serviceFee;
   const badge = getBadge(data.ticketType);
   const isSelected = numberOfTicket > 0;
 
@@ -142,13 +145,28 @@ const TicketCard = ({ data, handleClick }) => {
           </button>
         </div>
 
-        {/* Total */}
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wide">Total</p>
-          <p className={`font-black text-base tabular-nums ${total > 0 ? 'text-white' : 'text-white/20'}`}>
-            {total > 0 ? `₦${total.toLocaleString()}` : '—'}
-          </p>
-        </div>
+        {/* Price breakdown */}
+        {total > 0 ? (
+          <div className="flex flex-col gap-1 py-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wide">Subtotal</p>
+              <p className="text-white/60 text-xs tabular-nums">₦{total.toLocaleString()}</p>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wide">Service fee</p>
+              <p className="text-white/60 text-xs tabular-nums">₦{serviceFee.toLocaleString()}</p>
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-1 mt-1 border-t border-white/[0.06]">
+              <p className="text-white/50 text-[10px] font-bold uppercase tracking-wide">You'll pay</p>
+              <p className="font-black text-base tabular-nums text-white">₦{grandTotal.toLocaleString()}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wide">Total</p>
+            <p className="font-black text-base tabular-nums text-white/20">—</p>
+          </div>
+        )}
 
         {/* CTA */}
         <button

@@ -19,6 +19,7 @@ import { useSEO } from '../../hooks/useSEO'
 import Logo from '../../assets/logo.png'
 import ShareModal from '../../components/ShareModal'
 import { useScrollReveal } from '../../hooks/useScrollReveal'
+import computeServiceFee from '../../utils/computeServiceFee'
 import { DotGrid, ConfettiScatter, SoundWave, Sparkle, SparkleSmall, TicketOutline, FloatingParticles, StarField, SpinRings, ScanLine, Meteors, GlowRings, Waveform, StageLights } from '../../components/Decor'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -201,6 +202,11 @@ const Ticket = () => {
   const buildTicketPayload = (ref, displayId) => {
     const quantity = Number(ticket.numberOfTicket)
     const amount = Number(ticket.amount)
+    const amountPaid = quantity * amount
+    // Buyer-facing checkout fee — added on top of amountPaid when charging
+    // Paystack, but kept as its own field here (never folded into amount/
+    // amountPaid) so ticket price and the organizer's payout stay fee-free.
+    const serviceFee = computeServiceFee(amountPaid)
 
     return {
       ticketId:         displayId.toString(),
@@ -212,7 +218,8 @@ const Ticket = () => {
       numberOfTicket:   quantity,
       quantity,
       email:            formData.email.trim(),
-      amountPaid:       quantity * amount,
+      amountPaid,
+      serviceFee,
       imageUrl:         ticket.imageUrl,
       ticketDatabaseId: ticket._id,
       parentTicket:     displayId.toString(),
@@ -229,6 +236,7 @@ const Ticket = () => {
     ticketType:       payload.ticketType,
     amount:           payload.amount,
     amountPaid:       payload.amountPaid,
+    serviceFee:       payload.serviceFee,
     name:             payload.name,
     phone:            payload.phone,
     numberOfTicket:   payload.numberOfTicket,
@@ -536,6 +544,7 @@ const Ticket = () => {
           user_name: payload.name,
           email: payload.email,
           amount_paid: payload.amountPaid,
+          service_fee: payload.serviceFee,
           custom_fields: [
             { display_name: 'Event ID',            variable_name: 'event_id',          value: id },
             { display_name: 'Ticket Type',         variable_name: 'ticket_type',        value: payload.ticketType || '' },
@@ -544,6 +553,9 @@ const Ticket = () => {
             { display_name: 'Ticket Display ID',   variable_name: 'ticket_display_id',  value: displayTicketId },
             { display_name: 'Ticket DB ID',        variable_name: 'ticket_db_id',       value: payload.ticketDatabaseId || '' },
             { display_name: 'User Name',           variable_name: 'user_name',          value: payload.name },
+            // Read back by deliverTicket (i-sabi-server) to separate the
+            // service fee from the ticket price — see computeServiceFee.js.
+            { display_name: 'Service Fee',         variable_name: 'service_fee',        value: String(payload.serviceFee || 0) },
           ],
         },
         onSuccess: handlePaystackSuccess,
@@ -576,8 +588,8 @@ const Ticket = () => {
       toast.error('Please enter a valid phone number.')
       return
     }
-    const amount = Math.round(Number(ticket.numberOfTicket) * Number(ticket.amount) * 100)
-    if (!amount || isNaN(amount) || amount <= 0) {
+    const baseAmount = Number(ticket.numberOfTicket) * Number(ticket.amount)
+    if (!baseAmount || isNaN(baseAmount) || baseAmount <= 0) {
       toast.error('Invalid ticket amount.')
       return
     }
@@ -588,13 +600,16 @@ const Ticket = () => {
     const payload = buildTicketPayload(ref, displayId)
     persistPendingPurchase(payload, 'initialized')
     setModal(false)
-    initiatePayment(displayId, ref, amount, payload)
+    // Charge base ticket price + service fee (payload.serviceFee) — Paystack
+    // amount is in kobo.
+    const chargeAmount = Math.round((payload.amountPaid + payload.serviceFee) * 100)
+    initiatePayment(displayId, ref, chargeAmount, payload)
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
-      {modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} />}
+      {modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} ticket={ticket} />}
       {successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} mongoId={mongoTicketId} eventId={id} event={event} />}
 
       {/* ── Hero ── */}
