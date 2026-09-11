@@ -1,4 +1,5 @@
 import React from 'react'
+import computeServiceFee from '../../utils/computeServiceFee'
 
 const FIELDS = [
   {
@@ -15,10 +16,14 @@ const FIELDS = [
   },
 ];
 
-const InputModal = ({ setModal, handleSubmit, setFormData, formData }) => {
+const InputModal = ({ setModal, handleSubmit, setFormData, formData, ticket }) => {
   const handleInput = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const subtotal = Number(ticket?.numberOfTicket || 0) * Number(ticket?.amount || 0);
+  const serviceFee = subtotal > 0 ? computeServiceFee(subtotal) : 0;
+  const grandTotal = subtotal + serviceFee;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -49,6 +54,26 @@ const InputModal = ({ setModal, handleSubmit, setFormData, formData }) => {
               </svg>
             </button>
           </div>
+
+          {/* Price breakdown */}
+          {subtotal > 0 && (
+            <div className="mx-6 mt-4 p-4 rounded-xl bg-white/[0.04] border border-white/[0.07] space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-white/40 text-xs">
+                  {ticket?.ticketType} × {ticket?.numberOfTicket}
+                </p>
+                <p className="text-white/60 text-xs tabular-nums">₦{subtotal.toLocaleString()}</p>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-white/40 text-xs">Service fee</p>
+                <p className="text-white/60 text-xs tabular-nums">₦{serviceFee.toLocaleString()}</p>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-white/[0.08]">
+                <p className="text-white font-bold text-sm">Total to pay</p>
+                <p className="text-[#22c55e] font-black text-lg tabular-nums">₦{grandTotal.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -85,7 +110,7 @@ const InputModal = ({ setModal, handleSubmit, setFormData, formData }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                Proceed to Payment
+                {grandTotal > 0 ? `Pay ₦${grandTotal.toLocaleString()}` : 'Proceed to Payment'}
               </button>
 
               <p className="text-center text-white/20 text-[11px] flex items-center justify-center gap-1.5">
