@@ -610,7 +610,12 @@ const Ticket = () => {
     <div className="min-h-screen bg-[#0a0a0a]">
       <Header />
       {modal && <InputModal setModal={setModal} setFormData={setFormData} formData={formData} handleSubmit={handleSubmit} ticket={ticket} />}
-      {successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} mongoId={mongoTicketId} eventId={id} event={event} />}
+      {/* eventId must be the real _id, not the URL param `id` — the URL can
+          now be a slug, but SuccessModal builds /find-ticket/:eventId and
+          ?eid=, and findMyTicket matches tickets by the literal (always-
+          ObjectId) Ticket.eventId. Falls back to `id` only if `event` hasn't
+          loaded, which shouldn't happen once successModal is shown. */}
+      {successModal && <SuccessModal setSuccessModal={setSuccessModal} ticketId={ticketId} mongoId={mongoTicketId} eventId={event?._id || id} event={event} />}
 
       {/* ── Hero ── */}
       <section className="relative min-h-[55vh] sm:min-h-[62vh] flex flex-col justify-end overflow-hidden">

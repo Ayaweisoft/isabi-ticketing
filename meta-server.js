@@ -35,18 +35,20 @@ http.createServer(async (req, res) => {
 
   if (!isBot) return serveIndex(res)
 
-  // Extract event ID from the URL path — the real route (and the link sent
-  // to event owners in the approval email, see event_control.js in the
-  // server repo) is bare /:id, NOT /ticket/:id. This regex previously never
-  // matched a real shared link, so this whole dynamic branch was dead code
-  // in production — every actual share fell through to the generic
-  // static index.html below.
-  const m = (req.url ?? '').match(/^\/([a-f0-9]{24})(?:[/?#]|$)/i)
+  // Extract the event id/slug from the URL path — the real route (and the
+  // link sent to event owners in the approval email, see event_control.js in
+  // the server repo) is bare /:id, NOT /ticket/:id. Nginx (see nginx.conf)
+  // only proxies here for a single top-level segment that isn't one of this
+  // app's own routes, so no extra exclusion is needed here — accepts both
+  // legacy 24-char ObjectId links and current slug links.
+  const m = (req.url ?? '').match(/^\/([a-z0-9-]{1,80})(?:[/?#]|$)/i)
   if (!m) return serveIndex(res)
 
   const id = m[1]
 
   try {
+    // /v2/get-event-by-id/:id resolves either shape (event_model.js's slug
+    // field / utils/resolve-event.js on the server).
     const apiRes = await fetch(`${API}/v2/get-event-by-id/${id}`, {
       signal: AbortSignal.timeout(6000),
     })
@@ -55,7 +57,7 @@ http.createServer(async (req, res) => {
 
     const title = esc(ev.eventName ? `${ev.eventName} | i-Sabi` : 'i-Sabi | Buy Event Tickets in Nigeria')
     const desc  = esc(ev.aboutEvent ?? `Get tickets for ${ev.eventName ?? 'this event'} on i-Sabi — Nigeria's trusted event platform.`)
-    const url   = esc(`${SITE}/${id}`)
+    const url   = esc(`${SITE}/${ev.slug || id}`)
 
     // Composite the event's own cover photo with the i-Sabi watermark
     // (Instagram-style: the real content, with small platform branding
