@@ -50,9 +50,12 @@ const ShareModal = ({ event, onClose }) => {
   const [tab, setTab] = useState('share')
   const [downloading, setDownloading] = useState(false)
 
-  // Canonical URL — always uses event ID so QR and share links are identical
-  const url = event?._id
-    ? `${window.location.origin}/ticket/${event._id}`
+  // Canonical URL — the real route (App.jsx) is a bare /:id at root, not
+  // /ticket/:id, which doesn't exist and would fall through to the SPA's
+  // default route. Prefers the slug (readable, and what the meta-server's
+  // og:image bot path matches) over the raw _id.
+  const url = (event?.slug || event?._id)
+    ? `${window.location.origin}/${event.slug || event._id}`
     : window.location.href
   const text = `🎟️ ${event?.eventName || 'Check out this event'} — get your tickets now on i-Sabi!`
   const eventSlug = (event?.eventName || 'event').replace(/\s+/g, '-').toLowerCase()
