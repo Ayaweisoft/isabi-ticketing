@@ -64,8 +64,11 @@ http.createServer(async (req, res) => {
     // underneath) instead of showing the raw photo with no branding at all.
     // Falls back to the plain event photo (or the generic logo) if the
     // compositor is slow/unreachable — never let this block the preview.
+    // Most real event photos are on Firebase Storage, not Cloudinary (a DB
+    // survey found 73% on Firebase) — gating on Cloudinary only was
+    // silently skipping compositing for most real events.
     let img = ev.image_url ?? `${SITE}/logo.png`
-    if (ev.image_url && /^https:\/\/res\.cloudinary\.com\//.test(ev.image_url)) {
+    if (ev.image_url && /^https:\/\/(res\.cloudinary\.com|firebasestorage\.googleapis\.com)\//.test(ev.image_url)) {
       try {
         const ogRes = await fetch(
           `${API}/og-image?source=${encodeURIComponent(ev.image_url)}&key=ticket_${id}`,
