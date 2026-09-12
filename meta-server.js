@@ -98,8 +98,8 @@ http.createServer(async (req, res) => {
   <meta property="og:title"       content="${title}">
   <meta property="og:description" content="${desc}">
   <meta property="og:image"       content="${img}">
-  <meta property="og:image:width"  content="1200">
-  <meta property="og:image:height" content="630">
+  <meta property="og:image:width"  content="1080">
+  <meta property="og:image:height" content="1350">
   <meta property="og:url"         content="${url}">
 
   <!-- Twitter / X -->
